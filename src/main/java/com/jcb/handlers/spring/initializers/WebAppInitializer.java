@@ -24,6 +24,7 @@ public class WebAppInitializer implements WebApplicationInitializer {
 				new TomcatHttpHandlerAdapter(httpHandler));
 		dispatcher.addMapping("/");
 		dispatcher.setLoadOnStartup(1);
+		dispatcher.setAsyncSupported(true);
 	}
 
 }

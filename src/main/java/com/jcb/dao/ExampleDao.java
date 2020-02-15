@@ -4,6 +4,7 @@
 package com.jcb.dao;
 
 import com.jcb.dto.ExampleDto;
+import com.jcb.enumeration.Gender;
 
 import java.time.LocalDate;
 
@@ -27,15 +28,15 @@ public class ExampleDao {
 
     private final ReactiveRedisConnectionFactory factory;
 
-    private final ReactiveRedisOperations<String, ExampleDto> exampleDaoOps;
+    private final ReactiveRedisOperations<String, ExampleDto> exampleDaoRedisOps;
 
     @PostConstruct
     public void loadData() {
-	factory.getReactiveConnection().serverCommands().flushAll()
-		.thenMany(Flux.just("Jet Black Redis", "Darth Redis", "Black Alert Redis").map(name -> {
-		    return ExampleDto.builder().id(name).name("Jeffry " + name).dateOfBirth(LocalDate.now()).build();
-		}).flatMap(coffee -> exampleDaoOps.opsForValue().set(coffee.getId(), coffee)))
-		.thenMany(exampleDaoOps.keys("*").flatMap(exampleDaoOps.opsForValue()::get))
+	factory.getReactiveConnection().serverCommands().flushAll().thenMany(Flux.just(1, 2, 3).map(name -> {
+	    return ExampleDto.builder().id(name).firstName("Jeffry ").middleName("Jacob ").lastName("D ")
+		    .dateOfBirth(LocalDate.now()).gender(Gender.MALE).build();
+	}).flatMap(exampleDto -> exampleDaoRedisOps.opsForList().leftPush(exampleDto.getClass().getSimpleName(),
+		exampleDto))).thenMany(exampleDaoRedisOps.opsForList().range(ExampleDto.class.getSimpleName(), 0, -1))
 		.subscribe(System.out::println);
     }
 

@@ -3,12 +3,8 @@ package com.jcb.handlers.spring.bean.redis;
 import com.jcb.annotation.RedisTable;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -22,8 +18,6 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.data.cassandra.core.cql.PrimaryKeyType;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.util.ClassUtils;
@@ -34,8 +28,6 @@ public class RedisTemplateBeanCreator implements BeanDefinitionRegistryPostProce
 
     private static List<Class<?>> redisTableClasses = null;
 
-    private static Map<Class<?>, Field> primaryKeyMap = new HashMap<Class<?>, Field>();
-
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
     }
@@ -43,7 +35,7 @@ public class RedisTemplateBeanCreator implements BeanDefinitionRegistryPostProce
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 	try {
-	    mapClassAndPartitionKey();
+	    redisTableClasses = getAnnotatedClassesInPackage("com.jcb.dto", RedisTable.class);
 	    redisTableClasses.stream().forEach(redisTableClass -> {
 		createSerializerBean(redisTableClass, registry);
 		createSerializerContextBean(redisTableClass, registry);
@@ -86,7 +78,7 @@ public class RedisTemplateBeanCreator implements BeanDefinitionRegistryPostProce
 
     private void createSerializerBean(Class<?> redisTableClass, BeanDefinitionRegistry registry) {
 	BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(Jackson2JsonRedisSerializer.class)
-		.addConstructorArgValue(redisTableClass.getClass());
+		.addConstructorArgValue(redisTableClass);
 	registry.registerBeanDefinition(redisTableClass.getSimpleName().replace("Dto", "Dao") + "Serializer",
 		builder.getBeanDefinition());
     }
@@ -122,20 +114,6 @@ public class RedisTemplateBeanCreator implements BeanDefinitionRegistryPostProce
 	    }
 	}
 	return candidates;
-    }
-
-    private void mapClassAndPartitionKey() throws ClassNotFoundException, IOException {
-	redisTableClasses = getAnnotatedClassesInPackage("com.jcb.dto", RedisTable.class);
-	redisTableClasses.stream().forEach(redisTableClass -> {
-	    Field[] declaredields = redisTableClass.getDeclaredFields();
-	    for (Field declaredField : declaredields) {
-		PrimaryKeyColumn column = declaredField.getAnnotation(PrimaryKeyColumn.class);
-		if (Objects.nonNull(column) && column.type() == PrimaryKeyType.PARTITIONED && column.ordinal() == 0) {
-		    primaryKeyMap.put(redisTableClass, declaredField);
-		    break;
-		}
-	    }
-	});
     }
 
 }

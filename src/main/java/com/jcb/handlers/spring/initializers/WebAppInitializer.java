@@ -18,7 +18,6 @@ public class WebAppInitializer implements WebApplicationInitializer {
     public void onStartup(ServletContext servletContext) throws ServletException {
 	AnnotationConfigWebApplicationContext mainContext = new AnnotationConfigWebApplicationContext();
 	mainContext.register(MainConfig.class);
-	mainContext.setConfigLocation("com.jcb");
 	mainContext.refresh();
 	HttpHandler httpHandler = WebHttpHandlerBuilder.applicationContext(mainContext).build();
 	ServletRegistration.Dynamic dispatcher = servletContext.addServlet("tomcatHandler",

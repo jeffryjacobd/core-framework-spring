@@ -43,6 +43,8 @@ public class RedisTemplateBeanCreator implements BeanDefinitionRegistryPostProce
 	    });
 	} catch (ClassNotFoundException | IOException e) {
 	    e.printStackTrace();
+	} finally {
+	    redisTableClasses = null;
 	}
     }
 

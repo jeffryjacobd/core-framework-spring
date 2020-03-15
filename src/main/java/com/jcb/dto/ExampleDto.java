@@ -3,17 +3,17 @@
  */
 package com.jcb.dto;
 
+import com.datastax.oss.driver.api.mapper.annotations.ClusteringColumn;
+import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.jcb.annotation.CassandraTable;
 import com.jcb.annotation.RedisTable;
 import com.jcb.enumeration.Gender;
 
 import java.time.LocalDate;
-
-import org.springframework.data.cassandra.core.cql.PrimaryKeyType;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,17 +27,18 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@CassandraTable(keySpace = "core", tableName = "Example_Dto")
 @RedisTable
 @Builder
 public class ExampleDto {
 
-    @PrimaryKeyColumn(type = PrimaryKeyType.PARTITIONED, ordinal = 0)
+    @PartitionKey(0)
     private Integer id;
 
-    @PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, ordinal = 1)
+    @ClusteringColumn(0)
     private String firstName;
 
-    @PrimaryKeyColumn(type = PrimaryKeyType.CLUSTERED, ordinal = 2)
+    @ClusteringColumn(1)
     private String middleName;
 
     private String lastName;

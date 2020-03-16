@@ -86,7 +86,8 @@ public class RedisTemplateBeanCreator implements BeanDefinitionRegistryPostProce
     }
 
     @SuppressWarnings("unchecked")
-    private boolean isCandidate(MetadataReader metadataReader, Class annotationClass) throws ClassNotFoundException {
+    private boolean isCandidate(MetadataReader metadataReader, @SuppressWarnings("rawtypes") Class annotationClass)
+	    throws ClassNotFoundException {
 	Class<?> c = Class.forName(metadataReader.getClassMetadata().getClassName());
 	if (c.getAnnotation(annotationClass) != null) {
 	    return true;

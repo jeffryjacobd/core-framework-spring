@@ -23,6 +23,7 @@ public class RedisCacheConfig {
 	return new LettuceConnectionFactory();
     }
 
+    @SuppressWarnings("rawtypes")
     @Bean("redisSerializationContextBuilder")
     RedisSerializationContext.RedisSerializationContextBuilder redisSerializationContextBuilder() {
 	return RedisSerializationContext.newSerializationContext(new StringRedisSerializer());

@@ -1,6 +1,7 @@
 package com.jcb.dao.impl;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.jcb.dao.ExampleDao;
 import com.jcb.dto.ExampleDto;
@@ -23,8 +24,8 @@ public class ExampleDaoImpl extends AbstractDaoImpl<ExampleDto> implements Examp
 
     private ExampleDaoImpl(ReactiveRedisConnectionFactory redisConnectionFactory,
 	    ReactiveRedisOperations<String, ExampleDto> daoRedisOps, CompletionStage<CqlSession> cassandraSession,
-	    Map<String, PreparedStatement> preparedStatement) {
-	super(redisConnectionFactory, daoRedisOps, cassandraSession, preparedStatement);
+	    Map<String, PreparedStatement> preparedStatement, BatchStatementBuilder batchStatementBuilder) {
+	super(redisConnectionFactory, daoRedisOps, cassandraSession, preparedStatement, batchStatementBuilder);
     }
 
     @PostConstruct

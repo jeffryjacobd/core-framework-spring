@@ -52,7 +52,8 @@ public class DaoTemplateBeanCreator extends AbstractTemplateBeanCreator {
 			    cassandraTableDaoClass.getSimpleName().replace("DaoImpl", "Dao") + "ReactiveRedisTemplate");
 	}
 	daoImplContextbuilder = daoImplContextbuilder.addConstructorArgReference("cassandraSession")
-		.addConstructorArgReference("preparedStatementMap").setAutowireMode(Autowire.BY_TYPE.value());
+		.addConstructorArgReference("preparedStatementMap").addConstructorArgReference("batchStatementBuilder")
+		.setAutowireMode(Autowire.BY_TYPE.value());
 
 	registry.registerBeanDefinition(cassandraTableDaoClass.getSimpleName().replace("DaoImpl", "Dao"),
 		daoImplContextbuilder.getBeanDefinition());

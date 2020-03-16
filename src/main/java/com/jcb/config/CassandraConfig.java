@@ -3,6 +3,8 @@ package com.jcb.config;
 import static com.jcb.constants.SystemPropertyConstants.CASSANDRA_POINTS_PROPERTY;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.DefaultBatchType;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 
 import java.net.InetSocketAddress;
@@ -44,7 +46,11 @@ public class CassandraConfig {
     @Bean("preparedStatementMap")
     Map<String, PreparedStatement> getPreparedStatementMap() {
 	return new HashMap<String, PreparedStatement>();
+    }
 
+    @Bean("batchStatementBuilder")
+    BatchStatementBuilder getBatchStatement() {
+	return new BatchStatementBuilder(DefaultBatchType.LOGGED);
     }
 
 }

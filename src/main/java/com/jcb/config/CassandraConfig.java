@@ -3,13 +3,12 @@ package com.jcb.config;
 import static com.jcb.constants.SystemPropertyConstants.CASSANDRA_POINTS_PROPERTY;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.DefaultBatchType;
-import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
@@ -23,29 +22,28 @@ public class CassandraConfig {
 
     @Bean("cassandraSession")
     CompletionStage<CqlSession> cassandraSession() {
-	CompletionStage<CqlSession> cqlSession = CqlSession.builder().addContactPoints(getContactPoints())
-		.withLocalDatacenter("DC1").buildAsync();
+	CompletionStage<CqlSession> cqlSession = mapContactPoints(CqlSession.builder());
 	return cqlSession;
     }
 
-    private static Collection<InetSocketAddress> getContactPoints() {
-	Collection<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>();
+    private static CompletionStage<CqlSession> mapContactPoints(CqlSessionBuilder cqlSessionBuilder) {
 	String cassandraPoints = System.getProperty(CASSANDRA_POINTS_PROPERTY);
 	if (StringUtils.isEmpty(cassandraPoints)) {
-	    addressList.add(InetSocketAddress.createUnresolved("127.0.0.1", 9042));
+	    return cqlSessionBuilder.addContactPoint(InetSocketAddress.createUnresolved("127.0.0.1", 9042))
+		    .withLocalDatacenter("DC1").buildAsync();
 	} else {
 	    for (String cassandraPoint : cassandraPoints.split(",")) {
-		addressList.add(InetSocketAddress.createUnresolved(
+		cqlSessionBuilder = cqlSessionBuilder.addContactPoint(InetSocketAddress.createUnresolved(
 			cassandraPoint.substring(0, cassandraPoint.indexOf(":")).trim(), Integer.valueOf(cassandraPoint
 				.substring(cassandraPoint.indexOf(":") + 1, cassandraPoint.length()).trim())));
 	    }
 	}
-	return addressList;
+	return cqlSessionBuilder.buildAsync();
     }
 
-    @Bean("preparedStatementMap")
-    Map<String, PreparedStatement> getPreparedStatementMap() {
-	return new HashMap<String, PreparedStatement>();
+    @Bean("boundStatementMap")
+    Map<String, BoundStatement> getPreparedStatementMap() {
+	return new HashMap<String, BoundStatement>();
     }
 
     @Bean("batchStatementBuilder")

@@ -2,7 +2,7 @@ package com.jcb.dao.impl;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
-import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
 
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
@@ -22,7 +22,7 @@ public abstract class AbstractDaoImpl<DtoName> {
 
     protected CompletionStage<CqlSession> cassandraSession;
 
-    protected Map<String, PreparedStatement> preparedStatement;
+    protected Map<String, BoundStatement> boundStatementMap;
 
     protected BatchStatementBuilder batchStatementbuilder;
 

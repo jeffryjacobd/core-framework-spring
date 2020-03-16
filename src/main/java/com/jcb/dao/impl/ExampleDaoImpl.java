@@ -25,7 +25,8 @@ public class ExampleDaoImpl extends AbstractDaoImpl<ExampleDto> implements Examp
     private ExampleDaoImpl(ReactiveRedisConnectionFactory redisConnectionFactory,
 	    ReactiveRedisOperations<String, ExampleDto> daoRedisOps, CompletionStage<CqlSession> cassandraSession,
 	    Map<String, BoundStatement> boundStatementMap, BatchStatementBuilder batchStatementBuilder) {
-	super(redisConnectionFactory, daoRedisOps, cassandraSession, boundStatementMap, batchStatementBuilder);
+	super(redisConnectionFactory, daoRedisOps, cassandraSession, boundStatementMap, batchStatementBuilder,
+		ExampleDto.class);
     }
 
     @PostConstruct

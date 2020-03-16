@@ -10,21 +10,23 @@ import java.util.concurrent.CompletionStage;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
-@AllArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@RequiredArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public abstract class AbstractDaoImpl<DtoName> {
 
-    protected ReactiveRedisConnectionFactory redisConnectionFactory;
+    protected final ReactiveRedisConnectionFactory redisConnectionFactory;
 
-    protected ReactiveRedisOperations<String, DtoName> daoRedisOps;
+    protected final ReactiveRedisOperations<String, DtoName> daoRedisOps;
 
-    protected CompletionStage<CqlSession> cassandraSession;
+    protected final CompletionStage<CqlSession> cassandraSession;
 
-    protected Map<String, BoundStatement> boundStatementMap;
+    protected final Map<String, BoundStatement> boundStatementMap;
 
-    protected BatchStatementBuilder batchStatementbuilder;
+    protected final BatchStatementBuilder batchStatementbuilder;
+
+    protected final Class<DtoName> dtoClass;
 
     public Flux<Long> insert(DtoName data) {
 	return null;

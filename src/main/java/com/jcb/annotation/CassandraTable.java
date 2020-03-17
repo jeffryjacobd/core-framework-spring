@@ -9,8 +9,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CassandraTable {
 
-    String keySpace();
+    public String keySpace();
 
-    String tableName();
+    public String tableName();
 
 }

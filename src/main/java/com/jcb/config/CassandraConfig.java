@@ -7,6 +7,8 @@ import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.DefaultBatchType;
+import com.datastax.oss.driver.api.core.metadata.schema.SchemaChangeListener;
+import com.jcb.handlers.cassandra.listener.schemachange.CassandraSchemaChangeListener;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -29,8 +31,7 @@ public class CassandraConfig {
     private static CompletionStage<CqlSession> mapContactPoints(CqlSessionBuilder cqlSessionBuilder) {
 	String cassandraPoints = System.getProperty(CASSANDRA_POINTS_PROPERTY);
 	if (StringUtils.isEmpty(cassandraPoints)) {
-	    return cqlSessionBuilder.addContactPoint(InetSocketAddress.createUnresolved("127.0.0.1", 9042))
-		    .withLocalDatacenter("DC1").buildAsync();
+	    return cqlSessionBuilder.withKeyspace("system_schema").buildAsync();
 	} else {
 	    for (String cassandraPoint : cassandraPoints.split(",")) {
 		cqlSessionBuilder = cqlSessionBuilder.addContactPoint(InetSocketAddress.createUnresolved(
@@ -38,7 +39,11 @@ public class CassandraConfig {
 				.substring(cassandraPoint.indexOf(":") + 1, cassandraPoint.length()).trim())));
 	    }
 	}
-	return cqlSessionBuilder.buildAsync();
+	return cqlSessionBuilder.withSchemaChangeListener(getSchemaChangeListener()).buildAsync();
+    }
+
+    static SchemaChangeListener getSchemaChangeListener() {
+	return new CassandraSchemaChangeListener();
     }
 
     @Bean("boundStatementMap")

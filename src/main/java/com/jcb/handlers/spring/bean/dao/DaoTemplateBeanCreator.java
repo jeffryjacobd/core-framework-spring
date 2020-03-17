@@ -50,13 +50,16 @@ public class DaoTemplateBeanCreator implements BeanDefinitionRegistryPostProcess
 	if (cassandraDtoClass.getAnnotation(RedisTable.class) == null) {
 	    daoImplContextbuilder = daoImplContextbuilder.addConstructorArgValue(null).addConstructorArgValue(null);
 	} else {
-	    daoImplContextbuilder = daoImplContextbuilder.addConstructorArgReference("reactiveRedisConnectionFactory")
-		    .addConstructorArgReference(
+	    daoImplContextbuilder = daoImplContextbuilder
+		    .addPropertyReference("redisConnectionFactory", "reactiveRedisConnectionFactory")
+		    .addPropertyReference("daoRedisOps",
 			    cassandraTableDaoClass.getSimpleName().replace("DaoImpl", "Dao") + "ReactiveRedisTemplate");
 	}
-	daoImplContextbuilder = daoImplContextbuilder.addConstructorArgReference("cassandraSession")
-		.addConstructorArgReference("boundStatementMap").addConstructorArgReference("batchStatementBuilder")
-		.setAutowireMode(Autowire.BY_TYPE.value());
+	daoImplContextbuilder = daoImplContextbuilder
+		.addPropertyReference("cassandraSessionCompletionStage", "cassandraSession")
+		.addPropertyReference("boundStatementMap", "boundStatementMap")
+		.addPropertyReference("batchStatementbuilder", "batchStatementBuilder")
+		.addPropertyValue("dtoClass", cassandraDtoClass).setAutowireMode(Autowire.BY_TYPE.value());
 
 	registry.registerBeanDefinition(cassandraTableDaoClass.getSimpleName().replace("DaoImpl", "Dao"),
 		daoImplContextbuilder.getBeanDefinition());

@@ -1,14 +1,9 @@
-package com.jcb.handlers.spring.bean;
+package com.jcb.utility;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -18,20 +13,11 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.SystemPropertyUtils;
 
-@Configuration
-public abstract class AbstractTemplateBeanCreator implements BeanDefinitionRegistryPostProcessor {
-
-    @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-
-    }
-
-    @Override
-    public abstract void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException;
+public class UtilityMethodsHelper {
 
     @SuppressWarnings("unchecked")
-    private boolean isCandidate(MetadataReader metadataReader, @SuppressWarnings("rawtypes") Class annotationClass)
-	    throws ClassNotFoundException {
+    private static boolean isCandidate(MetadataReader metadataReader,
+	    @SuppressWarnings("rawtypes") Class annotationClass) throws ClassNotFoundException {
 	Class<?> c = Class.forName(metadataReader.getClassMetadata().getClassName());
 	if (c.getAnnotation(annotationClass) != null) {
 	    return true;
@@ -39,11 +25,11 @@ public abstract class AbstractTemplateBeanCreator implements BeanDefinitionRegis
 	return false;
     }
 
-    private String resolveBasePackage(String basePackage) {
+    private static String resolveBasePackage(String basePackage) {
 	return ClassUtils.convertClassNameToResourcePath(SystemPropertyUtils.resolvePlaceholders(basePackage));
     }
 
-    protected List<Class<?>> getAnnotatedClassesInPackage(String packagePath, Class<?> annotatation)
+    public static List<Class<?>> getAnnotatedClassesInPackage(String packagePath, Class<?> annotatation)
 	    throws IOException, ClassNotFoundException {
 	ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
 	MetadataReaderFactory metadataReaderFactory = new CachingMetadataReaderFactory(resourcePatternResolver);
@@ -63,7 +49,7 @@ public abstract class AbstractTemplateBeanCreator implements BeanDefinitionRegis
 	return candidates;
     }
 
-    protected Class<?> getClassWithFullName(String classNameWithPackage) throws ClassNotFoundException {
+    public static Class<?> getClassWithFullName(String classNameWithPackage) throws ClassNotFoundException {
 	return Class.forName(classNameWithPackage);
 
     }

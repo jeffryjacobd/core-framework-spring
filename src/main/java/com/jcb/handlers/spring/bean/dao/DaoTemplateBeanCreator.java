@@ -1,27 +1,30 @@
 package com.jcb.handlers.spring.bean.dao;
 
 import com.jcb.annotation.RedisTable;
-import com.jcb.handlers.spring.bean.AbstractTemplateBeanCreator;
+import com.jcb.utility.UtilityMethodsHelper;
 
 import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 @Configuration
-public class DaoTemplateBeanCreator extends AbstractTemplateBeanCreator {
+public class DaoTemplateBeanCreator implements BeanDefinitionRegistryPostProcessor {
 
     private static List<Class<?>> cassandraTableDaoClasses = null;
 
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 	try {
-	    cassandraTableDaoClasses = getAnnotatedClassesInPackage("com.jcb.dao.impl", Component.class);
+	    cassandraTableDaoClasses = UtilityMethodsHelper.getAnnotatedClassesInPackage("com.jcb.dao.impl",
+		    Component.class);
 	    cassandraTableDaoClasses.stream().forEach(cassandraTableDaoClass -> {
 		createDaoBean(registry, cassandraTableDaoClass);
 	    });
@@ -39,7 +42,7 @@ public class DaoTemplateBeanCreator extends AbstractTemplateBeanCreator {
 	Class<?> cassandraDtoClass = null;
 	try {
 	    String parentClassWithGenerics = cassandraTableDaoClass.getGenericSuperclass().getTypeName();
-	    cassandraDtoClass = getClassWithFullName(parentClassWithGenerics
+	    cassandraDtoClass = UtilityMethodsHelper.getClassWithFullName(parentClassWithGenerics
 		    .substring(parentClassWithGenerics.indexOf("<") + 1, parentClassWithGenerics.indexOf(">")));
 	} catch (ClassNotFoundException e) {
 	    e.printStackTrace();
@@ -57,6 +60,10 @@ public class DaoTemplateBeanCreator extends AbstractTemplateBeanCreator {
 
 	registry.registerBeanDefinition(cassandraTableDaoClass.getSimpleName().replace("DaoImpl", "Dao"),
 		daoImplContextbuilder.getBeanDefinition());
+    }
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
     }
 
 }

@@ -3,13 +3,13 @@
  */
 package com.jcb.dto;
 
-import com.datastax.oss.driver.api.mapper.annotations.ClusteringColumn;
-import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.jcb.annotation.CassandraTable;
+import com.jcb.annotation.ClusteringKeyColumn;
+import com.jcb.annotation.PartitionKeyColumn;
 import com.jcb.annotation.RedisTable;
 import com.jcb.enumeration.Gender;
 
@@ -27,18 +27,18 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@CassandraTable(keySpace = "core", tableName = "Example_Dto")
+@CassandraTable(keySpace = "core", tableName = "Example")
 @RedisTable
 @Builder
 public class ExampleDto {
 
-    @PartitionKey(0)
+    @PartitionKeyColumn(0)
     private Integer id;
 
-    @ClusteringColumn(0)
+    @ClusteringKeyColumn(0)
     private String firstName;
 
-    @ClusteringColumn(1)
+    @ClusteringKeyColumn(1)
     private String middleName;
 
     private String lastName;

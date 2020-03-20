@@ -4,6 +4,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.jcb.handlers.cassandra.initializer.CassandraDbInitializerHelper;
+import com.jcb.handlers.cassandra.initializer.CassandraDbInitializerHelper.TableMetaDataHolder;
 
 import java.io.IOException;
 import java.util.Map;
@@ -40,33 +41,24 @@ public abstract class AbstractDaoImpl<DtoName> {
 
     protected static CqlSession cassandraSession;
 
-    private Boolean tableInitialized = false;
-
     public Flux<Long> insert(DtoName data) {
 	return null;
     }
 
+    private TableMetaDataHolder tableData;
+
     @PostConstruct
     void initDBProcedure() throws ClassNotFoundException, IOException, InterruptedException, ExecutionException {
-	cassandraSession = (cassandraSession == null) ? initializeCassandraSession() : cassandraSession;
+	cassandraSession = (cassandraSession == null)
+		? CassandraDbInitializerHelper.initializeCassandraSession(cassandraSessionCompletionStage)
+		: cassandraSession;
 	CassandraDbInitializerHelper.keySpaceInitialized = (!CassandraDbInitializerHelper.keySpaceInitialized)
 		? CassandraDbInitializerHelper.initializeKeySpace(cassandraSession)
 		: true;
-	tableInitialized = CassandraDbInitializerHelper.initializeTable(cassandraSession);
+	tableData = CassandraDbInitializerHelper.initializeTableMetaData(cassandraSession, dtoClass);
+	tableData.isCreated = (!tableData.isCreated)
+		? CassandraDbInitializerHelper.createTable(tableData, cassandraSession)
+		: true;
     }
-
-    private static CqlSession initializeCassandraSession() throws InterruptedException, ExecutionException {
-	return cassandraSessionCompletionStage.handle((cqlSession, throwable) -> {
-	    if (throwable != null) {
-		throwable.printStackTrace();
-		throw new RuntimeException(throwable);
-	    }
-	    return cqlSession;
-	}).toCompletableFuture().get();
-    }
-
-}
-
-class TableMetaDataHolder {
 
 }

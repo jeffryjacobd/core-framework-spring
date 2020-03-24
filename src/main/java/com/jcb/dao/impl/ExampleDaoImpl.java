@@ -23,6 +23,7 @@ public class ExampleDaoImpl extends AbstractDaoImpl<ExampleDto> implements Examp
 		    return ExampleDto.builder().id(name).firstName("Jeffry").middleName("Jacob").lastName("D")
 			    .dateOfBirth(LocalDate.now()).gender(Gender.MALE).build();
 		}).flatMap(this::insert)).blockLast();
+	getAll("id").subscribe(System.out::println);
     }
 
 }

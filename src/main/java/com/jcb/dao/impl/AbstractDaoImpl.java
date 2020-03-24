@@ -19,6 +19,7 @@ import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 
 import lombok.Setter;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public abstract class AbstractDaoImpl<DtoName> {
@@ -49,19 +50,33 @@ public abstract class AbstractDaoImpl<DtoName> {
 
     private PreparedStatement insertPreparedStatement;
 
+    private PreparedStatement selectAllPreparedStatement;
+
     private TableMetaDataHolder tableData;
 
     public Mono<Boolean> insert(DtoName data) {
 	BoundStatement insertStatement = cassandraQueryHelperUtility.bindValuesToBoundStatement(data,
-		insertPreparedStatement.bind(), tableData, dtoClass);
+		boundStatementMap.get(insertPreparedStatement.getQuery()), tableData, dtoClass);
 	return Mono.from(cassandraSession.executeReactive(insertStatement)).retry(2).map(reactiveRow -> {
 	    return reactiveRow.getExecutionInfo() != null;
 	});
     }
 
+    public Flux<DtoName> getAll(String... specificColumns) {
+	if (specificColumns.length != 0) {
+	    return cassandraQueryHelperUtility.mapReactiveResultSetToDto(
+		    cassandraSession.executeReactive(
+			    cassandraQueryHelperUtility.createSelectSpecificStatement(tableData, specificColumns)),
+		    dtoClass);
+	}
+	return cassandraQueryHelperUtility.mapReactiveResultSetToDto(
+		cassandraSession.executeReactive(boundStatementMap.get(selectAllPreparedStatement.getQuery())),
+		dtoClass);
+    }
+
     @PostConstruct
     void initDBProcedure() throws ClassNotFoundException, IOException, InterruptedException, ExecutionException {
-	CassandraDbInitializerHelper.keySpaceInitialized = (!cassandraDbInitializerHelper.keySpaceInitialized)
+	CassandraDbInitializerHelper.keySpaceInitialized = (!CassandraDbInitializerHelper.keySpaceInitialized)
 		? cassandraDbInitializerHelper.initializeKeySpace()
 		: true;
 	tableData = cassandraDbInitializerHelper.initializeTableMetaData(dtoClass);
@@ -69,6 +84,9 @@ public abstract class AbstractDaoImpl<DtoName> {
 	insertPreparedStatement = (insertPreparedStatement != null) ? insertPreparedStatement
 		: cassandraQueryHelperUtility.createInsertPreparedStatement(tableData);
 	boundStatementMap.put(insertPreparedStatement.getQuery(), insertPreparedStatement.bind());
+	selectAllPreparedStatement = (selectAllPreparedStatement != null) ? selectAllPreparedStatement
+		: cassandraQueryHelperUtility.createSelectAllPreparedStatement(tableData);
+	boundStatementMap.put(selectAllPreparedStatement.getQuery(), selectAllPreparedStatement.bind());
 
     }
 

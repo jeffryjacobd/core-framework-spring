@@ -10,6 +10,7 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.api.core.detach.AttachmentPoint;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
+import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import com.datastax.oss.driver.api.querybuilder.schema.CreateTable;
@@ -19,6 +20,8 @@ import com.jcb.annotation.CassandraTable;
 import com.jcb.annotation.ClusteringKeyColumn;
 import com.jcb.annotation.PartitionKeyColumn;
 import com.jcb.constants.SystemPropertyConstants;
+import com.jcb.handlers.cassandra.codec.EnumTypeCodec;
+import com.jcb.handlers.cassandra.codec.GenericTypeObjectCodec;
 import com.jcb.utility.UtilityMethodsHelper;
 
 import java.io.IOException;
@@ -34,12 +37,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import reactor.core.publisher.Mono;
 
+@Component
 public class CassandraDbInitializerHelper {
+
+    @Autowired
+    private CqlSession cassandraSession;
+
+    @Autowired
+    private MutableCodecRegistry mutableCodecRegistry;
 
     private static Map<Class<?>, DataType> classMap = new HashMap<Class<?>, DataType>() {
 
@@ -66,7 +78,7 @@ public class CassandraDbInitializerHelper {
 
 	public Map<String, DataType> columnMap = new HashMap<>();
 
-	public Map<String, GenericType<?>> genericTypeMap = new HashMap<>();
+	public Map<String, GenericType> genericTypeMap = new HashMap<>();
 
 	public Map<Integer, String> orderedPartitionKey = new HashMap<>();
 
@@ -74,7 +86,7 @@ public class CassandraDbInitializerHelper {
 
 	public boolean isCreated = false;
 
-	ColumnDefinitions tableColumns;
+	public ColumnDefinitions tableColumns;
 
     }
 
@@ -82,21 +94,22 @@ public class CassandraDbInitializerHelper {
 
     private static CreateTable createTable;
 
-    public static boolean initializeKeySpace(CqlSession cassandraSession) throws ClassNotFoundException, IOException {
+    public boolean initializeKeySpace() throws ClassNotFoundException, IOException {
+	@SuppressWarnings("unused")
 	String[] defaultKeyspaces = { "system_auth", "system_schema", "system_distributed", "system", "system_traces" };
 	Set<String> keySpacesInPackage = getKeySpaceInPackage();
-	List<String> keySpacesInCassandra = getKeySpacesInCassandra(cassandraSession);
+	List<String> keySpacesInCassandra = getKeySpacesInCassandra();
 
 	keySpacesInPackage.stream().filter(keySpace -> {
 	    return (SystemPropertyConstants.CREATE_KEYSPACE) && (keySpacesInCassandra.indexOf(keySpace) == -1);
 	}).forEach(keySpace -> {
-	    createKeySpace(keySpace, cassandraSession).block();
+	    createKeySpace(keySpace).block();
 	});
 
 	return true;
     }
 
-    private static Mono<ReactiveRow> createKeySpace(String keySpace, CqlSession cassandraSession) {
+    private Mono<ReactiveRow> createKeySpace(String keySpace) {
 	return Mono.from(
 		cassandraSession.executeReactive(SchemaBuilder.createKeyspace(keySpace).withSimpleStrategy(1).asCql()));
     }
@@ -113,7 +126,7 @@ public class CassandraDbInitializerHelper {
 	return keyspacesInPackage;
     }
 
-    private static List<String> getKeySpacesInCassandra(CqlSession cassandraSession) {
+    private List<String> getKeySpacesInCassandra() {
 	List<String> keySpacesInCassandra = new ArrayList<String>();
 	try {
 	    cassandraSession.executeAsync(SimpleStatement.builder("SELECT * FROM system_schema.keyspaces").build())
@@ -138,18 +151,7 @@ public class CassandraDbInitializerHelper {
 	return keySpacesInCassandra;
     }
 
-    public static CqlSession initializeCassandraSession(CompletionStage<CqlSession> cassandraSessionCompletionStage)
-	    throws InterruptedException, ExecutionException {
-	return cassandraSessionCompletionStage.handle((cqlSession, throwable) -> {
-	    if (throwable != null) {
-		throwable.printStackTrace();
-		throw new RuntimeException(throwable);
-	    }
-	    return cqlSession;
-	}).toCompletableFuture().get();
-    }
-
-    public static TableMetaDataHolder initializeTableMetaData(CqlSession cassandraSession, Class<?> dtoClass) {
+    public TableMetaDataHolder initializeTableMetaData(Class<?> dtoClass) {
 	TableMetaDataHolder tableDataHolder = new TableMetaDataHolder();
 	CassandraTable cassandraTable = dtoClass.getAnnotation(CassandraTable.class);
 	String tableName = cassandraTable.tableName();
@@ -159,75 +161,19 @@ public class CassandraDbInitializerHelper {
 	for (Field dtoField : dtoFields) {
 	    tableDataHolder.genericTypeMap.put(dtoField.getName(), GenericType.of(dtoField.getType()));
 	    if (classMap.containsKey(dtoField.getType())) {
-		columnDefinitionList.add(new ColumnDefinition() {
-
-		    @Override
-		    public boolean isDetached() {
-			return false;
-
-		    }
-
-		    @Override
-		    public void attach(AttachmentPoint attachmentPoint) {
-		    }
-
-		    @Override
-		    public CqlIdentifier getKeyspace() {
-			return CqlIdentifier.fromInternal(keySpaceName);
-		    }
-
-		    @Override
-		    public CqlIdentifier getTable() {
-			return CqlIdentifier.fromInternal(tableName);
-		    }
-
-		    @Override
-		    public CqlIdentifier getName() {
-			return CqlIdentifier.fromInternal(dtoField.getName());
-		    }
-
-		    @Override
-		    public DataType getType() {
-			return classMap.get(dtoField.getType());
-		    }
-
-		});
+		columnDefinitionList.add(
+			createColumnDefinition(keySpaceName, tableName, dtoField, classMap.get(dtoField.getType())));
 		tableDataHolder.columnMap.put(dtoField.getName(), classMap.get(dtoField.getType()));
 	    } else {
-		tableDataHolder.columnMap.put(dtoField.getName(), DataTypes.BLOB);
-		columnDefinitionList.add(new ColumnDefinition() {
-
-		    @Override
-		    public boolean isDetached() {
-			return false;
-
-		    }
-
-		    @Override
-		    public void attach(AttachmentPoint attachmentPoint) {
-		    }
-
-		    @Override
-		    public CqlIdentifier getKeyspace() {
-			return CqlIdentifier.fromInternal(keySpaceName);
-		    }
-
-		    @Override
-		    public CqlIdentifier getTable() {
-			return CqlIdentifier.fromInternal(tableName);
-		    }
-
-		    @Override
-		    public CqlIdentifier getName() {
-			return CqlIdentifier.fromInternal(dtoField.getName());
-		    }
-
-		    @Override
-		    public DataType getType() {
-			return DataTypes.BLOB;
-		    }
-
-		});
+		if (dtoField.getType().isEnum()) {
+		    tableDataHolder.columnMap.put(dtoField.getName(), DataTypes.TEXT);
+		    columnDefinitionList.add(createColumnDefinition(keySpaceName, tableName, dtoField, DataTypes.TEXT));
+		    mutableCodecRegistry.register(EnumTypeCodec.of(dtoField.getType(), DataTypes.TEXT));
+		} else {
+		    tableDataHolder.columnMap.put(dtoField.getName(), DataTypes.BLOB);
+		    columnDefinitionList.add(createColumnDefinition(keySpaceName, tableName, dtoField, DataTypes.BLOB));
+		    mutableCodecRegistry.register(GenericTypeObjectCodec.of(dtoField.getType(), DataTypes.BLOB));
+		}
 	    }
 	    PartitionKeyColumn primaryKeyField = dtoField.getAnnotation(PartitionKeyColumn.class);
 	    ClusteringKeyColumn clusteringKeyField = dtoField.getAnnotation(ClusteringKeyColumn.class);
@@ -241,7 +187,44 @@ public class CassandraDbInitializerHelper {
 	return tableDataHolder;
     }
 
-    public static boolean createTable(TableMetaDataHolder tableData, CqlSession cassandraSession) {
+    private static ColumnDefinition createColumnDefinition(String keySpaceName, String tableName, Field dtoField,
+	    DataType dataType) {
+	return new ColumnDefinition() {
+
+	    @Override
+	    public boolean isDetached() {
+		return false;
+	    }
+
+	    @Override
+	    public void attach(AttachmentPoint attachmentPoint) {
+	    }
+
+	    @Override
+	    public CqlIdentifier getKeyspace() {
+		return CqlIdentifier.fromInternal(keySpaceName);
+	    }
+
+	    @Override
+	    public CqlIdentifier getTable() {
+		return CqlIdentifier.fromInternal(tableName);
+	    }
+
+	    @Override
+	    public CqlIdentifier getName() {
+		return CqlIdentifier.fromInternal(dtoField.getName());
+	    }
+
+	    @Override
+	    public DataType getType() {
+		return dataType;
+	    }
+
+	};
+
+    }
+
+    public boolean createTable(TableMetaDataHolder tableData) {
 	CreateTableStart createTableStart = SchemaBuilder
 		.createTable(tableData.tableColumns.get(0).getKeyspace(), tableData.tableColumns.get(0).getTable())
 		.ifNotExists();
@@ -254,18 +237,20 @@ public class CassandraDbInitializerHelper {
 	    createTable = createTableStart.withPartitionKey(CqlIdentifier.fromInternal(partitionKeyName),
 		    tableData.columnMap.get(partitionKeyName));
 	});
+
 	tableData.orderedClusterKey.keySet().stream().sorted().forEach(clusterKeyOrder -> {
 	    String clusterKeyName = tableData.orderedClusterKey.get(clusterKeyOrder);
 	    createTable = createTable.withClusteringColumn(CqlIdentifier.fromInternal(clusterKeyName),
 		    tableData.columnMap.get(clusterKeyName));
 	});
+
 	tableData.columnMap.forEach((columnName, dataType) -> {
 	    if ((!tableData.orderedPartitionKey.containsValue(columnName))
 		    && (!tableData.orderedClusterKey.containsValue(columnName))) {
 		createTable = createTable.withColumn(CqlIdentifier.fromInternal(columnName), dataType);
 	    }
 	});
-	ReactiveRow row = Mono.from(cassandraSession.executeReactive(createTable.asCql())).block();
+	Mono.from(cassandraSession.executeReactive(createTable.asCql())).block();
 	return true;
     }
 

@@ -55,8 +55,7 @@ public class DaoTemplateBeanCreator implements BeanDefinitionRegistryPostProcess
 		    .addPropertyReference("daoRedisOps",
 			    cassandraTableDaoClass.getSimpleName().replace("DaoImpl", "Dao") + "ReactiveRedisTemplate");
 	}
-	daoImplContextbuilder = daoImplContextbuilder
-		.addPropertyReference("cassandraSessionCompletionStage", "cassandraSession")
+	daoImplContextbuilder = daoImplContextbuilder.addPropertyReference("cassandraSession", "cassandraSession")
 		.addPropertyReference("boundStatementMap", "boundStatementMap")
 		.addPropertyReference("batchStatementbuilder", "batchStatementBuilder")
 		.addPropertyValue("dtoClass", cassandraDtoClass).setAutowireMode(Autowire.BY_TYPE.value());

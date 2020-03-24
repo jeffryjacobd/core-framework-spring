@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class AspectHandler {
 
+    // @Before("within(com.jcb..*) && execution(* *(..))")
     public void logBefore(JoinPoint joinPoint) {
 	System.out.println(joinPoint.getSignature().toString());
     }

@@ -5,14 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.TYPE)
+@Target({ ElementType.FIELD, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface CassandraTable {
-
-    public String keySpace();
-
-    public String tableName();
-
-    public int ttl() default 0;
+public @interface Frozen {
 
 }

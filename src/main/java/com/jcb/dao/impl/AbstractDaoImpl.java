@@ -5,7 +5,6 @@ import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.jcb.handlers.cassandra.helper.CassandraQueryHelperUtility;
-import com.jcb.handlers.cassandra.initializer.CassandraDbInitializerHelper;
 import com.jcb.handlers.cassandra.initializer.CassandraDbInitializerHelper.TableMetaDataHolder;
 
 import java.io.IOException;
@@ -45,18 +44,16 @@ public abstract class AbstractDaoImpl<DtoName> {
     @Autowired
     private CassandraQueryHelperUtility cassandraQueryHelperUtility;
 
-    @Autowired
-    private CassandraDbInitializerHelper cassandraDbInitializerHelper;
-
     private PreparedStatement insertPreparedStatement;
 
     private PreparedStatement selectAllPreparedStatement;
 
-    private TableMetaDataHolder tableData;
+    @Setter
+    private TableMetaDataHolder tableMetaData;
 
     public Mono<Boolean> insert(DtoName data) {
 	BoundStatement insertStatement = cassandraQueryHelperUtility.bindValuesToBoundStatement(data,
-		boundStatementMap.get(insertPreparedStatement.getQuery()), tableData, dtoClass);
+		boundStatementMap.get(insertPreparedStatement.getQuery()), tableMetaData, dtoClass);
 	return Mono.from(cassandraSession.executeReactive(insertStatement)).retry(2).map(reactiveRow -> {
 	    return reactiveRow.getExecutionInfo() != null;
 	});
@@ -66,7 +63,7 @@ public abstract class AbstractDaoImpl<DtoName> {
 	if (specificColumns.length != 0) {
 	    return cassandraQueryHelperUtility.mapReactiveResultSetToDto(
 		    cassandraSession.executeReactive(
-			    cassandraQueryHelperUtility.createSelectSpecificStatement(tableData, specificColumns)),
+			    cassandraQueryHelperUtility.createSelectSpecificStatement(tableMetaData, specificColumns)),
 		    dtoClass);
 	}
 	return cassandraQueryHelperUtility.mapReactiveResultSetToDto(
@@ -76,16 +73,11 @@ public abstract class AbstractDaoImpl<DtoName> {
 
     @PostConstruct
     void initDBProcedure() throws ClassNotFoundException, IOException, InterruptedException, ExecutionException {
-	CassandraDbInitializerHelper.keySpaceInitialized = (!CassandraDbInitializerHelper.keySpaceInitialized)
-		? cassandraDbInitializerHelper.initializeKeySpace()
-		: true;
-	tableData = cassandraDbInitializerHelper.initializeTableMetaData(dtoClass);
-	tableData.isCreated = (!tableData.isCreated) ? cassandraDbInitializerHelper.createTable(tableData) : true;
 	insertPreparedStatement = (insertPreparedStatement != null) ? insertPreparedStatement
-		: cassandraQueryHelperUtility.createInsertPreparedStatement(tableData);
+		: cassandraQueryHelperUtility.createInsertPreparedStatement(tableMetaData);
 	boundStatementMap.put(insertPreparedStatement.getQuery(), insertPreparedStatement.bind());
 	selectAllPreparedStatement = (selectAllPreparedStatement != null) ? selectAllPreparedStatement
-		: cassandraQueryHelperUtility.createSelectAllPreparedStatement(tableData);
+		: cassandraQueryHelperUtility.createSelectAllPreparedStatement(tableMetaData);
 	boundStatementMap.put(selectAllPreparedStatement.getQuery(), selectAllPreparedStatement.bind());
 
     }

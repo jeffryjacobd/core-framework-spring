@@ -46,6 +46,7 @@ public class DaoTemplateBeanCreator implements BeanDefinitionRegistryPostProcess
 		    .substring(parentClassWithGenerics.indexOf("<") + 1, parentClassWithGenerics.indexOf(">")));
 	} catch (ClassNotFoundException e) {
 	    e.printStackTrace();
+	    throw new Error(e);
 	}
 	if (cassandraDtoClass.getAnnotation(RedisTable.class) == null) {
 	    daoImplContextbuilder = daoImplContextbuilder.addConstructorArgValue(null).addConstructorArgValue(null);
@@ -55,13 +56,25 @@ public class DaoTemplateBeanCreator implements BeanDefinitionRegistryPostProcess
 		    .addPropertyReference("daoRedisOps",
 			    cassandraTableDaoClass.getSimpleName().replace("DaoImpl", "Dao") + "ReactiveRedisTemplate");
 	}
+	createTableMetaDataBean(registry, cassandraDtoClass);
 	daoImplContextbuilder = daoImplContextbuilder.addPropertyReference("cassandraSession", "cassandraSession")
 		.addPropertyReference("boundStatementMap", "boundStatementMap")
 		.addPropertyReference("batchStatementbuilder", "batchStatementBuilder")
-		.addPropertyValue("dtoClass", cassandraDtoClass).setAutowireMode(Autowire.BY_TYPE.value());
+		.addPropertyValue("dtoClass", cassandraDtoClass)
+		.addPropertyReference("tableMetaData",
+			cassandraDtoClass.getSimpleName().replace("Dto", "Dao") + "TableMetaData")
+		.setAutowireMode(Autowire.BY_TYPE.value());
 
 	registry.registerBeanDefinition(cassandraTableDaoClass.getSimpleName().replace("DaoImpl", "Dao"),
 		daoImplContextbuilder.getBeanDefinition());
+    }
+
+    private void createTableMetaDataBean(BeanDefinitionRegistry registry, Class<?> cassandraDtoClass) {
+	BeanDefinitionBuilder tableMetaDatabuilder = BeanDefinitionBuilder.genericBeanDefinition()
+		.setFactoryMethodOnBean("initializeTableMetaData", "cassandraDbInitializerHelper")
+		.addConstructorArgValue(cassandraDtoClass);
+	registry.registerBeanDefinition(cassandraDtoClass.getSimpleName().replace("Dto", "Dao") + "TableMetaData",
+		tableMetaDatabuilder.getBeanDefinition());
     }
 
     @Override

@@ -14,8 +14,7 @@ import org.springframework.web.reactive.config.EnableWebFlux;
 @EnableAspectJAutoProxy
 @ComponentScan("com.jcb.aspect")
 @Import({ RedisCacheConfig.class, RedisTemplateBeanCreator.class, CassandraConfig.class, DaoTemplateBeanCreator.class,
-	CassandraUtilityConfig.class, ThymeleafConfig.class })
-
+	CassandraUtilityConfig.class, ThymeleafConfig.class, EmbeddedTomcatConfiguration.class })
 public class MainConfig {
 
 }

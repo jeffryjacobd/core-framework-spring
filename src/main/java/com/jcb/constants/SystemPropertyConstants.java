@@ -23,4 +23,6 @@ public class SystemPropertyConstants {
 
     public static final Boolean DELETE_KEYSPACE = Boolean.getBoolean("com.jcb.DeleteKeyspace");
 
+    public static final String TOMCAT_SERVER_PORT = "com.jcb.server.port";
+
 }

@@ -21,7 +21,7 @@
     </modules>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<tomcat.version>9.0.34</tomcat.version>
+		<tomcat.version>9.0.35</tomcat.version>
 		<aspectj.version>1.9.5</aspectj.version>
 		<spring.version>5.2.4.RELEASE</spring.version>
 		<spring.security.version>5.3.0.RELEASE</spring.security.version>

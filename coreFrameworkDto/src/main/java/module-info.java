@@ -8,13 +8,13 @@ module core.framework.dto {
 
     requires transitive lombok;
 
-    requires transitive java.driver.core;
-
     requires transitive logback.classic;
 
     requires transitive logback.core;
 
     requires transitive org.slf4j;
+
+    requires transitive com.datastax.oss.driver.core;
 
     exports com.jcb.constants;
 

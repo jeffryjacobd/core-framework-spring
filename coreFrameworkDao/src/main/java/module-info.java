@@ -15,8 +15,8 @@ module core.framework.dao {
     requires transitive spring.core;
 
     requires transitive spring.boot;
-
-    requires java.driver.query.builder;
+    
+    requires transitive com.datastax.oss.driver.querybuilder;
 
     exports com.jcb.dao to core.framework.biz;
 

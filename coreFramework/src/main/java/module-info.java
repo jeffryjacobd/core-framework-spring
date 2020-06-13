@@ -20,6 +20,8 @@ module core.framework {
 
     opens com.jcb.handlers.spring.initializer to spring.core, spring.beans, spring.context;
 
+    opens com.jcb.handlers.logging.initializer to spring.core, spring.beans, spring.context, spring.boot;
+
     opens com.jcb.config to spring.core, spring.beans, spring.context;
 
 }

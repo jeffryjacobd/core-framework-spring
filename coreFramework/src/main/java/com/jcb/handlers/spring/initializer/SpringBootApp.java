@@ -1,6 +1,7 @@
 package com.jcb.handlers.spring.initializer;
 
 import com.jcb.config.MainConfig;
+import com.jcb.handlers.logging.initializer.CustomLoggingSystem;
 
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -23,6 +24,7 @@ public class SpringBootApp {
 
     public static void main(String[] args) {
 	System.setProperty("java.util.logging.SimpleFormatter.format", "");
+	System.setProperty("org.springframework.boot.logging.LoggingSystem", CustomLoggingSystem.class.getName());
 	LOG.info("Initializing");
 	SpringApplication.run(SpringBootApp.class, args);
     }

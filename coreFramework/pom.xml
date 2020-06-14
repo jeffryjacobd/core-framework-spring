@@ -12,7 +12,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.jcb</groupId>
-			<artifactId>coreFrameworkBiz</artifactId>
+			<artifactId>coreFrameworkWeb</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>

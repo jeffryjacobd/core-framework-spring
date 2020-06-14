@@ -10,5 +10,10 @@
 	<artifactId>coreFrameworkWeb</artifactId>
 	<packaging>jar</packaging>
 	<dependencies>
+			<dependency>
+			<groupId>com.jcb</groupId>
+			<artifactId>coreFrameworkBiz</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 </project>

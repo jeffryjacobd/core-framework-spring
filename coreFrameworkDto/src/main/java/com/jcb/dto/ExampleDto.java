@@ -16,9 +16,9 @@ import com.jcb.constants.enumeration.Gender;
 import java.time.LocalDate;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.Builder;
 
 /**
  * @author Jeffry Jacob D

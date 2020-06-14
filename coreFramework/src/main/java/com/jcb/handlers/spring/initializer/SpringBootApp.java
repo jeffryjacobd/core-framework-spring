@@ -29,4 +29,11 @@ public class SpringBootApp {
 	SpringApplication.run(SpringBootApp.class, args);
     }
 
+    public static void main(Class<?> classToRun, String... args) {
+	System.setProperty("java.util.logging.SimpleFormatter.format", "");
+	System.setProperty("org.springframework.boot.logging.LoggingSystem", CustomLoggingSystem.class.getName());
+	LOG.info("Running other App");
+	SpringApplication.run(classToRun, args);
+    }
+
 }

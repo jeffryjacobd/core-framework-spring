@@ -13,11 +13,12 @@
 
 	<!-- sub modules -->
 	<modules>
+		<module>coreFrameworkUi</module>
 		<module>coreFramework</module>
 		<module>coreFrameworkDto</module>
 		<module>coreFrameworkDao</module>
-		<module>coreFrameworkWeb</module>
 		<module>coreFrameworkBiz</module>
+		<module>coreFrameworkWeb</module>
 	</modules>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

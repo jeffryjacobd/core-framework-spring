@@ -243,9 +243,9 @@
 						<AaddGeneratedAnnotation>false</AaddGeneratedAnnotation>
 						<Adebug>true</Adebug>
 					</compilerArguments>
-					<source>11</source>
-					<target>11</target>
-					<release>11</release>
+					<source>14</source>
+					<target>14</target>
+					<release>14</release>
 				</configuration>
 			</plugin>
 		</plugins>

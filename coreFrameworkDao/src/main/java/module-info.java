@@ -1,7 +1,5 @@
 module core.framework.dao {
 
-    requires transitive tomcat.annotations.api;
-
     requires transitive core.framework.dto;
 
     requires transitive reactor.core;
@@ -14,9 +12,11 @@ module core.framework.dao {
 
     requires transitive spring.core;
 
-    requires transitive spring.boot;
-    
     requires transitive com.datastax.oss.driver.querybuilder;
+
+    requires java.annotation;
+
+    requires spring.data.redis;
 
     exports com.jcb.dao to core.framework.biz;
 

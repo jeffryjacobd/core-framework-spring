@@ -4,8 +4,6 @@ module core.framework.dto {
 
     requires transitive com.fasterxml.jackson.datatype.jsr310;
 
-    requires transitive spring.data.redis;
-
     requires transitive lombok;
 
     requires transitive logback.classic;

@@ -1,0 +1,14 @@
+  .jcb-button-container {
+    margin-left: 16px;
+    margin-top: 16px;
+    border: 8px;
+    width: fit-content;
+  }
+  button {
+    height: 42px;
+    font-size: 18px;
+    min-width: 64px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }

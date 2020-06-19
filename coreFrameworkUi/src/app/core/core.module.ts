@@ -9,6 +9,7 @@ import { ComponentModule } from './component/component.module';
   imports: [
     CommonModule,
     ComponentModule
-  ]
+  ],
+  exports: [ComponentModule]
 })
 export class CoreModule { }

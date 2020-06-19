@@ -13,8 +13,8 @@
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "outputPath": "dist",
-			"baseHref": "core-framework-ui",
-			"deployUrl": "core-framework-ui",
+			"baseHref": "/core-framework-ui/",
+			"deployUrl": "/core-framework-ui/",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",

@@ -10,10 +10,16 @@
 	<artifactId>coreFrameworkWeb</artifactId>
 	<packaging>jar</packaging>
 	<dependencies>
-			<dependency>
+		<dependency>
 			<groupId>com.jcb</groupId>
 			<artifactId>coreFrameworkBiz</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.jcb</groupId>
+			<artifactId>coreFrameworkUi</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<type>pom</type>
 		</dependency>
 	</dependencies>
 </project>

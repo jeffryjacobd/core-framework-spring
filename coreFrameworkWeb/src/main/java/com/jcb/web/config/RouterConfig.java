@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import({ StaticFilesRouter.class })
+@Import({ StaticFilesRouter.class, WebSecurityConfig.class })
 public class RouterConfig {
 
 }

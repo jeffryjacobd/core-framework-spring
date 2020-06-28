@@ -1,4 +1,7 @@
 <jcb-text-input [label]="'Id'" (valueEvent)="updateId($event)" [inputType]="InputType.Text"></jcb-text-input>
 <jcb-text-input [label]="'Password'" (valueEvent)="updatePassword($event)" [inputType]="InputType.Password">
 </jcb-text-input>
-<jcb-button [text]="'Login'"></jcb-button>
+<jcb-checkbox [name]="'Remember me'" [color]="'primary'" [isChecked]="false" (checked)="isLocalStorage($event)">
+</jcb-checkbox>
+<jcb-button [text]="'Login'" [disabled]="disableLoginButton" (clicked)="loginButtonClicked()" [buttonIcon]="buttonIcon">
+</jcb-button>

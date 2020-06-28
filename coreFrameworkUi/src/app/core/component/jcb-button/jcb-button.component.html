@@ -1,16 +1,23 @@
-    <div class="jcb-button-container" [ngSwitch]="buttonType">
-        <button class ="jcb-raised-button" mat-raised-button *ngSwitchCase="ButtonType.Raise" [color]="buttonColor" [disabled]="disabled">
-            <mat-icon style='margin-right: 8px; left : 0px; top :0px' *ngIf="!!buttonIcon">bookmark</mat-icon>
-            {{text}}
-        </button>
-        <button class ="jcb-flat-button" mat-flat-button *ngSwitchCase="ButtonType.Flat" [color]="buttonColor" [disabled]="disabled">
-            <mat-icon style='margin-right: 8px; left : 0px; top :0px' *ngIf="!!buttonIcon">bookmark</mat-icon>
-            {{text}}
-        </button>
-        <button class ="jcb-fab-button" mat-fab *ngSwitchCase="ButtonType.Fab" [color]="buttonColor" [disabled]="disabled">{{text}}</button>
-        <button class ="jcb-mini-fab-button" mat-mini-fab *ngSwitchCase="ButtonType.MiniFab" [color]="buttonColor" [disabled]="disabled">{{text}}</button>
-        <button class ="jcb-basic-button" mat-button *ngSwitchCase="ButtonType.Basic" [color]="buttonColor" [disabled]="disabled">
-            <mat-icon style='margin-right: 8px; left : 0px; top :0px' *ngIf="!!buttonIcon">bookmark</mat-icon>
-            {{text}}
-        </button>
-    </div>
+<div class="jcb-button-container" [ngSwitch]="buttonType">
+    <button class="jcb-raised-button" mat-raised-button *ngSwitchCase="ButtonType.Raise" [color]="buttonColor"
+        [disabled]="disabled" (click)="buttonClicked()">
+        <mat-icon style='margin-right: 8px; left : 0px; top :0px' *ngIf="!!buttonIcon" (click)="buttonClicked()">
+            {{buttonIcon}}</mat-icon>
+        {{text}}
+    </button>
+    <button class="jcb-flat-button" mat-flat-button *ngSwitchCase="ButtonType.Flat" [color]="buttonColor"
+        [disabled]="disabled" (click)="buttonClicked()">
+        <mat-icon style='margin-right: 8px; left : 0px; top :0px' *ngIf="!!buttonIcon" (click)="buttonClicked()">
+            {{buttonIcon}}</mat-icon>
+        {{text}}
+    </button>
+    <button class="jcb-fab-button" mat-fab *ngSwitchCase="ButtonType.Fab" [color]="buttonColor" [disabled]="disabled"
+        (click)="buttonClicked()">{{text}}</button>
+    <button class="jcb-mini-fab-button" mat-mini-fab *ngSwitchCase="ButtonType.MiniFab" [color]="buttonColor"
+        [disabled]="disabled" (click)="buttonClicked()">{{text}}</button>
+    <button class="jcb-basic-button" mat-button *ngSwitchCase="ButtonType.Basic" [color]="buttonColor"
+        [disabled]="disabled" (click)="buttonClicked()">
+        <mat-icon style='margin-right: 8px; left : 0px; top :0px' *ngIf="!!buttonIcon">{{buttonIcon}}</mat-icon>
+        {{text}}
+    </button>
+</div>

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'jcb-button',
@@ -7,23 +7,28 @@ import { Component, OnInit, Input } from '@angular/core';
 })
 export class JcbButtonComponent implements OnInit {
 
-  @Input() buttonType : ButtonType;
-  @Input() buttonColor : ButtonColor;
-  @Input() disabled : Boolean;
-  @Input() buttonIcon : ButtonIcon = undefined ;
+  @Input() buttonType: ButtonType;
+  @Input() buttonColor: ButtonColor;
+  @Input() disabled: Boolean;
+  @Input() buttonIcon: ButtonIcon = undefined;
   readonly ButtonType = ButtonType;
   readonly ButtonColor = ButtonColor;
-  @Input() text : String;
+  @Input() text: String;
+  @Output() clicked: EventEmitter<void>;
   constructor() {
-   }
+    this.clicked = new EventEmitter<void>();
+  }
 
   ngOnInit(): void {
     !this.buttonType && (this.buttonType = ButtonType.Raise);
     !this.text && (this.text = 'Login');
     !this.buttonColor && (this.buttonColor = ButtonColor.Primary);
-    !this.disabled && (this.disabled= false);
+    !this.disabled && (this.disabled = false);
   }
 
+  buttonClicked() {
+    this.clicked.emit();
+  }
 
 }
 
@@ -36,12 +41,13 @@ export enum ButtonType {
 }
 
 export enum ButtonColor {
-Primary = 'primary',
-Accent = 'accent',
-Warn = 'warn',
-Basic = 'no-color'
+  Primary = 'primary',
+  Accent = 'accent',
+  Warn = 'warn',
+  Basic = 'no-color'
 }
 
 export enum ButtonIcon {
-
+  loading = 'query_builder',
+  bookmark = 'bookmark'
 }

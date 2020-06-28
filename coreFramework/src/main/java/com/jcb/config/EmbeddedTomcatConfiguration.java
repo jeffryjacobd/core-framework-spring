@@ -11,6 +11,7 @@ import org.springframework.boot.web.server.Ssl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.ResourcePatternResolver;
 
 @Configuration
 public class EmbeddedTomcatConfiguration {
@@ -30,7 +31,7 @@ public class EmbeddedTomcatConfiguration {
 
     private Ssl sslConfig() throws IOException {
 	Ssl ssl = new Ssl();
-	ssl.setKeyStore(new ClassPathResource("/keystore/com.jcb.p12").getFile().getAbsolutePath());
+	ssl.setKeyStore(ResourcePatternResolver.CLASSPATH_URL_PREFIX + new ClassPathResource("/keystore/com.jcb.p12").getPath());
 	ssl.setKeyAlias("jcb");
 	ssl.setKeyStorePassword("jeffryjacobd");
 	ssl.setKeyStoreType("PKCS12");

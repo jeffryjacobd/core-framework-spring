@@ -227,6 +227,19 @@
 		<testSourceDirectory>src\test\java</testSourceDirectory>
 		<outputDirectory>target\classes</outputDirectory>
 		<testOutputDirectory>target\test-classes</testOutputDirectory>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>com.github.eirslett</groupId>
+					<artifactId>frontend-maven-plugin</artifactId>
+					<version>1.10.0</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>3.1.0</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>

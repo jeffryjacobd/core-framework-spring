@@ -10,7 +10,6 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.jcb.annotation.CassandraTable;
 import com.jcb.annotation.ClusteringKeyColumn;
 import com.jcb.annotation.PartitionKeyColumn;
-import com.jcb.annotation.RedisTable;
 import com.jcb.constants.enumeration.Gender;
 
 import java.time.LocalDate;
@@ -28,7 +27,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @CassandraTable(keySpace = "core", tableName = "example")
-@RedisTable
 @Builder
 public class ExampleDto {
 

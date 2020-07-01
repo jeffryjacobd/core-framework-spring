@@ -1,6 +1,5 @@
 package com.jcb.handlers.spring.bean.dao;
 
-import com.jcb.annotation.RedisTable;
 import com.jcb.utility.UtilityMethodsHelper;
 
 import java.io.IOException;
@@ -48,14 +47,6 @@ public class DaoTemplateBeanCreator implements BeanDefinitionRegistryPostProcess
 	} catch (ClassNotFoundException e) {
 	    e.printStackTrace();
 	    throw new Error(e);
-	}
-	if (cassandraDtoClass.getAnnotation(RedisTable.class) == null) {
-	    daoImplContextbuilder = daoImplContextbuilder.addConstructorArgValue(null).addConstructorArgValue(null);
-	} else {
-	    daoImplContextbuilder = daoImplContextbuilder
-		    .addPropertyReference("redisConnectionFactory", "reactiveRedisConnectionFactory")
-		    .addPropertyReference("daoRedisOps",
-			    cassandraTableDaoClass.getSimpleName().replace("DaoImpl", "Dao") + "ReactiveRedisTemplate");
 	}
 	createTableMetaDataBean(registry, cassandraDtoClass);
 	daoImplContextbuilder = daoImplContextbuilder.addPropertyReference("cassandraSession", "cassandraSession")

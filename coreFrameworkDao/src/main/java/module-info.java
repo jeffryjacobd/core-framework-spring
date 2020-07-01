@@ -16,15 +16,11 @@ module core.framework.dao {
 
     requires java.annotation;
 
-    requires spring.data.redis;
-
     exports com.jcb.dao to core.framework.biz;
 
     exports com.jcb.handlers.cassandra.listener.schemachange;
 
     exports com.jcb.handlers.spring.bean.dao;
-
-    exports com.jcb.handlers.spring.bean.dto;
 
     opens com.jcb.handlers.cassandra.helper to spring.beans, spring.core, spring.context;
 

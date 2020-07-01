@@ -14,20 +14,12 @@ import java.util.concurrent.ExecutionException;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
-import org.springframework.data.redis.core.ReactiveRedisOperations;
 
 import lombok.Setter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public abstract class AbstractDaoImpl<DtoName> {
-
-    @Setter
-    protected static ReactiveRedisConnectionFactory redisConnectionFactory;
-
-    @Setter
-    protected ReactiveRedisOperations<String, DtoName> daoRedisOps;
 
     @Setter
     private static CqlSession cassandraSession;

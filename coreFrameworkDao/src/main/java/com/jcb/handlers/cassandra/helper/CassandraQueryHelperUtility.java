@@ -101,6 +101,7 @@ public class CassandraQueryHelperUtility {
 		int specificColumnIdentifierIndex = 0;
 		for (String specificColumn : specificColumns) {
 			tableData.columnMap.computeIfAbsent(specificColumn, key -> {
+				LOG.error("The specified column: {}, does not exist in table", specificColumn);
 				throw new RuntimeException("The specified column does not exist in table");
 			});
 			specificColumnIdentifiers[specificColumnIdentifierIndex++] = CqlIdentifier.fromInternal(specificColumn);

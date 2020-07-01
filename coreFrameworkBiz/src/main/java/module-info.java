@@ -1,5 +1,5 @@
 module core.framework.biz {
 
-    requires transitive core.framework.dao;
+	requires transitive core.framework.dao;
 
 }

@@ -31,7 +31,6 @@
 		<thymeleaf.version>3.0.11.RELEASE</thymeleaf.version>
 		<logback.version>1.2.3</logback.version>
 		<lombok.version>1.18.12</lombok.version>
-		<spring.jwt.version>1.1.1.RELEASE</spring.jwt.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -210,9 +209,9 @@
 				<version>3.3.6.RELEASE</version>
 			</dependency>
 			<dependency>
-				<groupId>org.springframework.security</groupId>
-				<artifactId>spring-security-jwt</artifactId>
-				<version>${spring.jwt.version}</version>
+				<groupId>com.nimbusds</groupId>
+				<artifactId>nimbus-jose-jwt</artifactId>
+				<version>8.19</version>
 			</dependency>
 			<dependency>
 				<groupId>org.mapstruct</groupId>

@@ -1,9 +1,9 @@
 package com.jcb.dto;
 
-import java.util.List;
-
 import com.jcb.annotation.CassandraTable;
 import com.jcb.annotation.PartitionKeyColumn;
+
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,9 +17,11 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RoleDto {
 
-	@PartitionKeyColumn(0)
-	private String role;
+    @PartitionKeyColumn(0)
+    private String role;
 
-	private List<String> relatedRoles;
+    private List<String> relatedRoles;
+
+    private String description;
 
 }

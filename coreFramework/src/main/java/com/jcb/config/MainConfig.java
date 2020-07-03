@@ -1,5 +1,6 @@
 package com.jcb.config;
 
+import com.jcb.handlers.jwt.JwtAuthenticationManager;
 import com.jcb.handlers.spring.bean.dao.DaoTemplateBeanCreator;
 import com.jcb.web.config.RouterConfig;
 
@@ -11,8 +12,8 @@ import org.springframework.web.reactive.config.EnableWebFlux;
 @Configuration
 @EnableWebFlux
 @EnableAspectJAutoProxy
-@Import({ CassandraConfig.class, DaoTemplateBeanCreator.class,
-	CassandraUtilityConfig.class, EmbeddedTomcatConfiguration.class, RouterConfig.class })
+@Import({ CassandraConfig.class, DaoTemplateBeanCreator.class, CassandraUtilityConfig.class,
+	EmbeddedTomcatConfiguration.class, JwtAuthenticationManager.class, RouterConfig.class })
 public class MainConfig {
 
 }

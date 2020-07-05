@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { InputType } from '../../core/component/jcb-text-input/jcb-text-input.component';
-import { ButtonIcon } from 'src/app/core/component/jcb-button/jcb-button.component';
+import { InputType } from '../../component/jcb-text-input/jcb-text-input.component';
+import { ButtonIcon } from '../../component/jcb-button/jcb-button.component';
+import { AuthService } from '../../security/auth/service/auth.service';
+import { UserModel } from '../../security/auth/model/user-model'
 
 @Component({
   selector: 'app-login',
@@ -8,18 +10,20 @@ import { ButtonIcon } from 'src/app/core/component/jcb-button/jcb-button.compone
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit {
-  private id: String;
-  private password: String;
+  private id: string;
+  private password: string;
   private rememberMe: boolean;
   disableLoginButton: boolean;
   InputType = InputType;
   ButtonIcon = ButtonIcon;
   buttonIcon: ButtonIcon = undefined;
-  updateId(value: String): void {
+
+  constructor(private authservice: AuthService) { }
+  updateId(value: string): void {
     this.id = value;
   }
 
-  updatePassword(value: String): void {
+  updatePassword(value: string): void {
     this.password = value;
   }
 
@@ -29,6 +33,8 @@ export class LoginComponent implements OnInit {
   loginButtonClicked() {
     this.buttonIcon = ButtonIcon.loading;
     this.disableLoginButton = true;
+    const userModel: UserModel = { user: this.id, password: this.password, rememberMe: this.rememberMe };
+    this.authservice.login(userModel);
   }
 
   ngOnInit(): void {

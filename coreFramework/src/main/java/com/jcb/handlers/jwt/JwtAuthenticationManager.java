@@ -9,9 +9,9 @@ import reactor.core.publisher.Mono;
 @Component
 public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
 
-    @Override
-    public Mono<Authentication> authenticate(Authentication authentication) {
-	return null;
-    }
+	@Override
+	public Mono<Authentication> authenticate(Authentication authentication) {
+		return null;
+	}
 
 }

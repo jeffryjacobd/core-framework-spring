@@ -8,10 +8,10 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @EnableWebFluxSecurity
 public class WebSecurityConfig {
 
-    @Bean
-    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-	http.authorizeExchange().anyExchange().permitAll();
-	return http.build();
-    }
+	@Bean
+	public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+		http.authorizeExchange().anyExchange().permitAll();
+		return http.build();
+	}
 
 }

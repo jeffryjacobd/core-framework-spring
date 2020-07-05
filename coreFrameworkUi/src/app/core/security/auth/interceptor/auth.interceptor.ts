@@ -15,7 +15,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
   constructor(private sessionStorageService: SessionStorageService) { }
 
-  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     (this.sessionStorageService.getSession() != undefined) && (request = request.clone({ setHeaders: { 'X-Auth-Token': this.sessionStorageService.getSession() } }));
     return next.handle(request);
   }

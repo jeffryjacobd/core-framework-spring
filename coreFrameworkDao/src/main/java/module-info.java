@@ -17,6 +17,8 @@ module core.framework.dao {
 	requires java.annotation;
 
 	requires com.datastax.oss.driver.core;
+	
+	requires java.driver.shaded.guava;
 
 	exports com.jcb.dao to core.framework.biz;
 

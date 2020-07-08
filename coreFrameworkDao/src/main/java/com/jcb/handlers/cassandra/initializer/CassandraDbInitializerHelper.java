@@ -23,10 +23,18 @@ import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import com.datastax.oss.driver.api.querybuilder.schema.CreateTable;
 import com.datastax.oss.driver.api.querybuilder.schema.CreateTableStart;
 import com.datastax.oss.driver.api.querybuilder.schema.compaction.CompactionStrategy;
+import com.datastax.oss.driver.api.querybuilder.schema.compaction.LeveledCompactionStrategy;
+import com.datastax.oss.driver.api.querybuilder.schema.compaction.SizeTieredCompactionStrategy;
+import com.datastax.oss.driver.api.querybuilder.schema.compaction.TimeWindowCompactionStrategy;
+import com.datastax.oss.driver.api.querybuilder.schema.compaction.TimeWindowCompactionStrategy.CompactionWindowUnit;
+import com.datastax.oss.driver.api.querybuilder.schema.compaction.TimeWindowCompactionStrategy.TimestampResolution;
 import com.datastax.oss.driver.internal.core.cql.DefaultColumnDefinitions;
 import com.jcb.annotation.CassandraTable;
 import com.jcb.annotation.ClusteringKeyColumn;
+import com.jcb.annotation.LCSCompaction;
 import com.jcb.annotation.PartitionKeyColumn;
+import com.jcb.annotation.STCSCompaction;
+import com.jcb.annotation.TWCSCompaction;
 import com.jcb.constants.SystemPropertyConstants;
 import com.jcb.handlers.cassandra.codec.EnumTypeCodec;
 import com.jcb.handlers.cassandra.codec.GenericTypeObjectCodec;
@@ -92,6 +100,7 @@ public class CassandraDbInitializerHelper {
 
 	public Map<String, DataType> columnMap = new HashMap<>();
 
+	@SuppressWarnings("rawtypes")
 	public Map<String, GenericType> genericTypeMap = new HashMap<>();
 
 	public Map<Integer, String> orderedPartitionKey = new HashMap<>();
@@ -99,14 +108,20 @@ public class CassandraDbInitializerHelper {
 	public Map<Integer, String> orderedClusterKey = new HashMap<>();
 
 	@SuppressWarnings("rawtypes")
-	public CompactionStrategy compactionStratergy = SchemaBuilder.sizeTieredCompactionStrategy().withBucketHigh(1.5)
-		.withBucketLow(0.5).withEnabled(true);
+	public CompactionStrategy compactionStratergy;
 
 	public boolean isCreated = false;
 
 	public ColumnDefinitions tableColumns;
 
 	public int ttl;
+	{
+	    @SuppressWarnings("rawtypes")
+	    LeveledCompactionStrategy stratergy = (LeveledCompactionStrategy) SchemaBuilder.leveledCompactionStrategy()
+		    .withEnabled(true).withTombstoneCompactionIntervalInSeconds(864000).withTombstoneThreshold(0.2)
+		    .withUncheckedTombstoneCompaction(false);
+	    this.compactionStratergy = stratergy.withSSTableSizeInMB(160);
+	}
 
     }
 
@@ -160,6 +175,7 @@ public class CassandraDbInitializerHelper {
 	String tableName = cassandraTable.tableName();
 	String keySpaceName = cassandraTable.keySpace();
 	tableDataHolder.ttl = cassandraTable.ttl();
+	initializeCompactionStratergy(tableDataHolder, dtoClass);
 	Field[] dtoFields = dtoClass.getDeclaredFields();
 	List<ColumnDefinition> columnDefinitionList = new ArrayList<>();
 	for (Field dtoField : dtoFields) {
@@ -207,6 +223,77 @@ public class CassandraDbInitializerHelper {
 	});
 	checkForTableSchemaMatch(tableMetaDataInDatabase, tableDataHolder);
 	return tableDataHolder;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void initializeCompactionStratergy(TableMetaDataHolder tableDataHolder, Class<?> dtoClass) {
+	LCSCompaction lcs = dtoClass.getAnnotation(LCSCompaction.class);
+	TWCSCompaction twcs = dtoClass.getAnnotation(TWCSCompaction.class);
+	STCSCompaction stcs = dtoClass.getAnnotation(STCSCompaction.class);
+	if (twcs != null) {
+	    TimeWindowCompactionStrategy.CompactionWindowUnit windowUnit;
+	    TimeWindowCompactionStrategy.TimestampResolution timestampResolution;
+	    switch (twcs.compactionWindowUnit()) {
+	    case DAYS:
+		windowUnit = CompactionWindowUnit.DAYS;
+		break;
+	    case HOURS:
+		windowUnit = CompactionWindowUnit.HOURS;
+		break;
+	    case MINUTES:
+		windowUnit = CompactionWindowUnit.MINUTES;
+		break;
+	    default:
+		windowUnit = CompactionWindowUnit.DAYS;
+	    }
+
+	    switch (twcs.timestampResolution()) {
+	    case MICROSECONDS:
+		timestampResolution = TimestampResolution.MICROSECONDS;
+		break;
+	    case MILLISECONDS:
+		timestampResolution = TimestampResolution.MILLISECONDS;
+		break;
+	    default:
+		timestampResolution = TimestampResolution.MILLISECONDS;
+	    }
+
+	    TimeWindowCompactionStrategy stratergy = SchemaBuilder.timeWindowCompactionStrategy();
+	    stratergy = (TimeWindowCompactionStrategy) stratergy.withEnabled(twcs.enabled())
+		    .withTombstoneCompactionIntervalInSeconds(twcs.tombStoneCompactionInterval())
+		    .withTombstoneThreshold(twcs.tombstoneThreshold())
+		    .withUncheckedTombstoneCompaction(twcs.uncheckedTombStoneCompaction());
+	    stratergy = stratergy.withCompactionWindow(twcs.compactionWindowSize(), windowUnit);
+	    stratergy = stratergy.withTimestampResolution(timestampResolution);
+	    tableDataHolder.compactionStratergy = stratergy;
+	    return;
+	}
+
+	if (stcs != null) {
+	    SizeTieredCompactionStrategy stratergy = (SizeTieredCompactionStrategy) SchemaBuilder
+		    .sizeTieredCompactionStrategy().withEnabled(stcs.enabled())
+		    .withTombstoneCompactionIntervalInSeconds(stcs.tombStoneCompactionInterval())
+		    .withTombstoneThreshold(stcs.tombstoneThreshold())
+		    .withUncheckedTombstoneCompaction(stcs.uncheckedTombStoneCompaction());
+	    stratergy = stratergy.withBucketHigh(stcs.bucketHigh());
+	    stratergy = stratergy.withBucketLow(stcs.bucketLow());
+	    stratergy = stratergy.withMaxThreshold(stcs.maxThreshold());
+	    stratergy = stratergy.withMinSSTableSizeInBytes(stcs.minSSTableSizeInBytes());
+	    stratergy = stratergy.withMinThreshold(stcs.minThreshold());
+	    stratergy = stratergy.withOnlyPurgeRepairedTombstones(stcs.purgeRepairedTombstones());
+	    tableDataHolder.compactionStratergy = stratergy;
+	    return;
+	}
+
+	if (lcs != null) {
+	    LeveledCompactionStrategy stratergy = (LeveledCompactionStrategy) SchemaBuilder.leveledCompactionStrategy()
+		    .withEnabled(lcs.enabled())
+		    .withTombstoneCompactionIntervalInSeconds(lcs.tombStoneCompactionInterval())
+		    .withTombstoneThreshold(lcs.tombstoneThreshold())
+		    .withUncheckedTombstoneCompaction(lcs.uncheckedTombStoneCompaction());
+	    tableDataHolder.compactionStratergy = stratergy.withSSTableSizeInMB(lcs.ssTableSizeInMB());
+	    return;
+	}
     }
 
     private void checkForTableSchemaMatch(TableMetadata tableMetaDataInDatabase, TableMetaDataHolder tableDataHolder) {

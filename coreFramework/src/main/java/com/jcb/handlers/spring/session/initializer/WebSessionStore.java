@@ -59,6 +59,7 @@ public class WebSessionStore implements org.springframework.web.server.session.W
 	@Override
 	public Mono<Void> removeSession(String sessionId) {
 		sessionMapFifoCache.remove(sessionId);
+		// TO DO Db delete
 		return Mono.empty();
 	}
 

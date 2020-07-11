@@ -53,8 +53,11 @@ public class CassandraQueryHelperUtility {
 		try {
 			for (Field dtoField : dtoClass.getDeclaredFields()) {
 				dtoField.setAccessible(true);
-				boundStatement = boundStatement.<Object>set(CqlIdentifier.fromInternal(dtoField.getName()),
-						dtoField.get(data), tableData.genericTypeMap.get(dtoField.getName()));
+				Object value = dtoField.get(data);
+				if (value != null) {
+					boundStatement = boundStatement.<Object>set(CqlIdentifier.fromInternal(dtoField.getName()), value,
+							tableData.genericTypeMap.get(dtoField.getName()));
+				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

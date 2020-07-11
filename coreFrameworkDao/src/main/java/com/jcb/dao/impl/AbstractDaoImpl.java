@@ -54,9 +54,10 @@ public abstract class AbstractDaoImpl<DtoName> {
 		BoundStatement insertStatement = cassandraQueryHelperUtility.bindValuesToBoundStatement(data,
 				boundStatementMap.get(insertPreparedStatement.getQuery()), tableMetaData, dtoClass);
 		LOG.info("Insert data into table {}", dtoClass.getName());
-		return Mono.from(cassandraSession.executeReactive(insertStatement)).map(reactiveRow -> {
-			return reactiveRow.getExecutionInfo() != null;
-		});
+		return Mono.fromFuture(cassandraSession.executeAsync(insertStatement).toCompletableFuture())
+				.map(reactiveRow -> {
+					return reactiveRow.getExecutionInfo() != null;
+				});
 	}
 
 	public Flux<DtoName> getAll(String... specificColumns) {

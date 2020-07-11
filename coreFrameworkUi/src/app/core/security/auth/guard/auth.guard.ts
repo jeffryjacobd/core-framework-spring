@@ -16,7 +16,7 @@ export class AuthGuard implements CanActivate {
     return this.authService.isAuthenticated().pipe(map(
       (url) => {
         if (url == 'true') { return true; } else {
-          return this.router.createUrlTree([url], { replaceUrl: true });
+          return this.router.createUrlTree([url], { skipLocationChange: true });
         }
       }
     ))

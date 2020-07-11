@@ -1,17 +1,17 @@
 module core.framework.web {
 
-    requires transitive core.framework.biz;
+	requires transitive core.framework.biz;
 
-    requires spring.webflux;
+	requires spring.webflux;
 
-    requires spring.security.config;
+	requires spring.security.config;
 
-    requires spring.security.web;
+	requires spring.security.web;
 
-    opens com.jcb.web.config to spring.context, spring.beans, spring.core;
+	opens com.jcb.web.config to spring.context, spring.beans, spring.core;
 
-    opens com.jcb.web.router to spring.context, spring.beans, spring.core;
+	opens com.jcb.web.router to spring.context, spring.beans, spring.core;
 
-    exports com.jcb.web.config to core.framework;
+	exports com.jcb.web.config to core.framework;
 
 }

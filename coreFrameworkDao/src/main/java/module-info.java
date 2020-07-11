@@ -14,22 +14,26 @@ module core.framework.dao {
 
 	requires transitive com.datastax.oss.driver.querybuilder;
 
-	requires java.annotation;
+	requires transitive spring.session.core;
 
-	requires com.datastax.oss.driver.core;
-	
-	requires java.driver.shaded.guava;
+	requires transitive spring.web;
 
-	exports com.jcb.dao to core.framework.biz;
+	requires transitive java.annotation;
+
+	exports com.jcb.dao to core.framework.biz, core.framework;
 
 	exports com.jcb.handlers.cassandra.listener.schemachange;
 
 	exports com.jcb.handlers.spring.bean.dao;
+
+	exports com.jcb.entity to core.framework;
 
 	opens com.jcb.handlers.cassandra.helper to spring.beans, spring.core, spring.context;
 
 	opens com.jcb.handlers.cassandra.initializer to spring.beans, spring.core, spring.context;
 
 	opens com.jcb.dao.impl to spring.beans, spring.core, spring.context;
+
+	opens com.jcb.dao to spring.beans, spring.core, spring.context, core.framework;
 
 }

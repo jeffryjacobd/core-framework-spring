@@ -10,7 +10,8 @@ public class WebSecurityConfig {
 
 	@Bean
 	public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-		http.authorizeExchange().anyExchange().permitAll();
+		// TO DO CSRF
+		http.authorizeExchange().anyExchange().permitAll().and().csrf().disable();
 		return http.build();
 	}
 

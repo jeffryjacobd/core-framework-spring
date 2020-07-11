@@ -20,7 +20,7 @@ module core.framework.dto {
 
 	exports com.jcb.annotation;
 
-	exports com.jcb.dto to core.framework.dao;
+	exports com.jcb.dto to core.framework.dao, core.framework;
 
 	opens com.jcb.dto to core.framework.dao;
 

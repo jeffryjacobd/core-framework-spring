@@ -18,7 +18,7 @@ export class AuthService {
   constructor(private http: HttpClient, private sessionStorageService: SessionStorageService, @Inject(LOCAL_STORAGE) private storage: StorageService) { }
 
   isAuthenticated(): Observable<string> {
-    if (this.sessionStorageService.getSession() != undefined) {
+    if (this.sessionStorageService.getLoginTime() != undefined) {
       return of('true');
     }
     return this._getSession();
@@ -34,6 +34,7 @@ export class AuthService {
     let sessionDataModel: SessionDataModel = {};
     const localStorageSessionKey = this.storage.get(SESSION_KEY);
     if (localStorageSessionKey != undefined) {
+      this.sessionStorageService.setSession(localStorageSessionKey);
       sessionDataModel = { sessionId: localStorageSessionKey };
     }
     return this.http.post<SessionDataModel>('getSession', sessionDataModel).pipe(tap(

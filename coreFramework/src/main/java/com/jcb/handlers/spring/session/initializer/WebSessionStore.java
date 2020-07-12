@@ -52,7 +52,9 @@ public class WebSessionStore implements org.springframework.web.server.session.W
 	public Mono<WebSession> retrieveSession(String sessionId) {
 		return Mono.justOrEmpty(sessionMapFifoCache.get(sessionId)).switchIfEmpty(
 				Mono.defer(() -> sessionDao.getSession(UUID.fromString(sessionId)).next().map(sessionDto -> {
-					return com.jcb.entity.WebSession.convertToEntity(sessionDto);
+					WebSession session = com.jcb.entity.WebSession.convertToEntity(sessionDto);
+					sessionMapFifoCache.put(sessionId, session);
+					return session;
 				})));
 	}
 

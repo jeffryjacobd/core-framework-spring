@@ -1,5 +1,7 @@
 package com.jcb.dao.impl;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -15,7 +17,9 @@ public class SessionDaoImpl extends AbstractDaoImpl<SessionDto> implements Sessi
 
 	@Override
 	public Flux<SessionDto> getSession(UUID sessionId) {
-		return Flux.empty();
+		Map<String, Object> partitionKeyMap = new HashMap<>();
+		partitionKeyMap.put("sessionId", sessionId);
+		return super.getForPartitionKey(partitionKeyMap);
 	}
 
 	@Override

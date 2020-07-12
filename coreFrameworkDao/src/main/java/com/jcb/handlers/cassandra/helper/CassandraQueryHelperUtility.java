@@ -1,7 +1,10 @@
 package com.jcb.handlers.cassandra.helper;
 
 import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,7 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
+import com.datastax.oss.driver.api.querybuilder.relation.Relation;
 import com.jcb.handlers.cassandra.initializer.CassandraDbInitializerHelper.TableMetaDataHolder;
 
 import ch.qos.logback.classic.Logger;
@@ -78,6 +82,20 @@ public class CassandraQueryHelperUtility {
 				.selectFrom(tableData.tableColumns.get(0).getKeyspace(), tableData.tableColumns.get(0).getTable()).all()
 				.build());
 
+	}
+
+	public PreparedStatement createSelectBasedOnPartitionPreparedStatement(TableMetaDataHolder tableData) {
+		List<Relation> additionalRelations = tableData.orderedPartitionKey.entrySet().stream()
+				.sorted((entry1, entry2) -> {
+					return (entry1.getKey() - entry2.getKey());
+				}).map(partitionKey -> {
+					return CqlIdentifier.fromInternal(partitionKey.getValue());
+				}).map(cqlIdentifier -> {
+					return Relation.column(cqlIdentifier).isEqualTo(QueryBuilder.bindMarker());
+				}).collect(Collectors.toList());
+		return cassandraSession.prepare(QueryBuilder
+				.selectFrom(tableData.tableColumns.get(0).getKeyspace(), tableData.tableColumns.get(0).getTable()).all()
+				.where(additionalRelations).build());
 	}
 
 	public synchronized <DtoName> Flux<DtoName> mapReactiveResultSetToDto(CompletionStage<AsyncResultSet> asyncResult,
@@ -147,6 +165,16 @@ public class CassandraQueryHelperUtility {
 				.selectFrom(tableData.tableColumns.get(0).getKeyspace(), tableData.tableColumns.get(0).getTable())
 				.columns(specificColumnIdentifiers).build();
 
+	}
+
+	public BoundStatement bindSelectBindMarkers(BoundStatement boundStatement, Map<String, Object> partitionKeyMap,
+			TableMetaDataHolder tableMeta) {
+		Object[] whereData = tableMeta.orderedPartitionKey.entrySet().stream().sorted((entry1, entry2) -> {
+			return (entry1.getKey() - entry2.getKey());
+		}).map(entry -> {
+			return partitionKeyMap.get(entry.getValue());
+		}).collect(Collectors.toList()).toArray();
+		return boundStatement.getPreparedStatement().bind(whereData);
 	}
 
 }

@@ -47,6 +47,8 @@ public abstract class AbstractDaoImpl<DtoName> {
 
 	private PreparedStatement selectAllPreparedStatement;
 
+	private PreparedStatement selectBasedOnPartitionKey;
+
 	@Setter
 	private TableMetaDataHolder tableMetaData;
 
@@ -70,6 +72,17 @@ public abstract class AbstractDaoImpl<DtoName> {
 				cassandraSession.executeAsync(boundStatementMap.get(selectAllPreparedStatement.getQuery())), dtoClass);
 	}
 
+	public Flux<DtoName> getForPartitionKey(Map<String, Object> partitionKeyMap, String... specificColumns) {
+		if (specificColumns.length != 0) {
+			// TO DO
+			return null;
+		}
+		return cassandraQueryHelperUtility.mapReactiveResultSetToDto(
+				cassandraSession.executeAsync(cassandraQueryHelperUtility.bindSelectBindMarkers(
+						boundStatementMap.get(selectBasedOnPartitionKey.getQuery()), partitionKeyMap, tableMetaData)),
+				dtoClass);
+	}
+
 	@PostConstruct
 	void initDBProcedure() throws ClassNotFoundException, IOException, InterruptedException, ExecutionException {
 		insertPreparedStatement = (insertPreparedStatement != null) ? insertPreparedStatement
@@ -78,6 +91,9 @@ public abstract class AbstractDaoImpl<DtoName> {
 		selectAllPreparedStatement = (selectAllPreparedStatement != null) ? selectAllPreparedStatement
 				: cassandraQueryHelperUtility.createSelectAllPreparedStatement(tableMetaData);
 		boundStatementMap.put(selectAllPreparedStatement.getQuery(), selectAllPreparedStatement.bind());
+		selectBasedOnPartitionKey = (selectBasedOnPartitionKey != null) ? selectBasedOnPartitionKey
+				: cassandraQueryHelperUtility.createSelectBasedOnPartitionPreparedStatement(tableMetaData);
+		boundStatementMap.put(selectBasedOnPartitionKey.getQuery(), selectBasedOnPartitionKey.bind());
 
 	}
 

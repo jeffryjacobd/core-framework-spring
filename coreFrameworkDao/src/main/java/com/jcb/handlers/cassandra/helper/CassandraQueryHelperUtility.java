@@ -1,18 +1,19 @@
 package com.jcb.handlers.cassandra.helper;
 
 import java.lang.reflect.Field;
+import java.util.concurrent.CompletionStage;
 
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.datastax.dse.driver.api.core.cql.reactive.ReactiveResultSet;
-import com.datastax.dse.driver.api.core.cql.reactive.ReactiveRow;
 import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.ColumnDefinition;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
@@ -21,6 +22,7 @@ import com.jcb.handlers.cassandra.initializer.CassandraDbInitializerHelper.Table
 
 import ch.qos.logback.classic.Logger;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Component
 public class CassandraQueryHelperUtility {
@@ -31,6 +33,10 @@ public class CassandraQueryHelperUtility {
 	private CqlSession cassandraSession;
 
 	private RegularInsert insertStatement;
+
+	private volatile CompletionStage<AsyncResultSet> currentAsyncResult;
+
+	private volatile CompletionStage<AsyncResultSet> previousAsyncResult;
 
 	public PreparedStatement createInsertPreparedStatement(TableMetaDataHolder tableData) {
 		CqlIdentifier keySpace = tableData.tableColumns.get(0).getKeyspace();
@@ -74,14 +80,38 @@ public class CassandraQueryHelperUtility {
 
 	}
 
-	public <DtoName> Flux<DtoName> mapReactiveResultSetToDto(ReactiveResultSet asyncResult, Class<DtoName> dtoClass) {
-		return Flux.from(asyncResult).map(reactiveRow -> {
-			return mapReactiveResultToDto(reactiveRow, dtoClass);
+	public synchronized <DtoName> Flux<DtoName> mapReactiveResultSetToDto(CompletionStage<AsyncResultSet> asyncResult,
+			Class<DtoName> dtoClass) {
+		this.currentAsyncResult = asyncResult;
+		return Mono.defer(() -> {
+			return Mono.fromCompletionStage(this.currentAsyncResult).map(result -> {
+				if (result.hasMorePages()) {
+					fetchNextPage(result, asyncResult);
+				} else {
+					this.currentAsyncResult = this.previousAsyncResult;
+				}
+				return result;
+			});
+		}).repeat(this::canRepeatForPaging).map(resultSet -> {
+			return resultSet.currentPage();
+		}).flatMap(iterableRow -> {
+			return Flux.fromIterable(iterableRow);
+		}).map(row -> {
+			return mapReactiveResultToDto(row, dtoClass);
 		});
 	}
 
+	private void fetchNextPage(AsyncResultSet resultSet, CompletionStage<AsyncResultSet> asyncResult) {
+		this.currentAsyncResult = resultSet.fetchNextPage();
+		this.previousAsyncResult = asyncResult;
+	}
+
+	private boolean canRepeatForPaging() {
+		return (this.currentAsyncResult != this.previousAsyncResult);
+	}
+
 	@SuppressWarnings("unchecked")
-	private <DtoName> DtoName mapReactiveResultToDto(ReactiveRow reactiveRow, Class<DtoName> dtoClass) {
+	private <DtoName> DtoName mapReactiveResultToDto(Row reactiveRow, Class<DtoName> dtoClass) {
 		Object dto = null;
 		try {
 			dto = dtoClass.getDeclaredConstructor().newInstance();
@@ -89,8 +119,12 @@ public class CassandraQueryHelperUtility {
 				String fieldName = resultColumnDefinition.getName().asInternal();
 				Field dtoField = dtoClass.getDeclaredField(fieldName);
 				dtoField.setAccessible(true);
-				dtoField.set(dto,
-						reactiveRow.get(resultColumnDefinition.getName(), GenericType.of(dtoField.getType())));
+				Object value = null;
+				try {
+					value = reactiveRow.get(resultColumnDefinition.getName(), GenericType.of(dtoField.getType()));
+				} catch (NullPointerException e) {
+				}
+				dtoField.set(dto, value);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

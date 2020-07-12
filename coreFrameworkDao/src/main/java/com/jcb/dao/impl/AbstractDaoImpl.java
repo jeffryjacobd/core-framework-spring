@@ -54,22 +54,20 @@ public abstract class AbstractDaoImpl<DtoName> {
 		BoundStatement insertStatement = cassandraQueryHelperUtility.bindValuesToBoundStatement(data,
 				boundStatementMap.get(insertPreparedStatement.getQuery()), tableMetaData, dtoClass);
 		LOG.info("Insert data into table {}", dtoClass.getName());
-		return Mono.fromFuture(cassandraSession.executeAsync(insertStatement).toCompletableFuture())
-				.map(reactiveRow -> {
-					return reactiveRow.getExecutionInfo() != null;
-				});
+		return Mono.fromCompletionStage(cassandraSession.executeAsync(insertStatement)).map(reactiveRow -> {
+			return reactiveRow.getExecutionInfo() != null;
+		});
 	}
 
 	public Flux<DtoName> getAll(String... specificColumns) {
 		if (specificColumns.length != 0) {
 			return cassandraQueryHelperUtility.mapReactiveResultSetToDto(
-					cassandraSession.executeReactive(
+					cassandraSession.executeAsync(
 							cassandraQueryHelperUtility.createSelectSpecificStatement(tableMetaData, specificColumns)),
 					dtoClass);
 		}
 		return cassandraQueryHelperUtility.mapReactiveResultSetToDto(
-				cassandraSession.executeReactive(boundStatementMap.get(selectAllPreparedStatement.getQuery())),
-				dtoClass);
+				cassandraSession.executeAsync(boundStatementMap.get(selectAllPreparedStatement.getQuery())), dtoClass);
 	}
 
 	@PostConstruct

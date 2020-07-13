@@ -14,9 +14,13 @@ import reactor.core.publisher.Mono;
 
 public class WebSession implements org.springframework.web.server.WebSession {
 
+	public transient static final String DEFAULT_SESSION_HEADER = "X-Auth-Token";
+
 	public transient static final String USER_NAME_KEY = "user-name-key";
 
 	public transient static final String IP_KEY = "ip-address-key";
+
+	public transient static final String USER_AGENT = "User-Agent";
 
 	@Getter
 	@Setter

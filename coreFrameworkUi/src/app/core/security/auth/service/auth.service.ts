@@ -31,18 +31,13 @@ export class AuthService {
   }
 
   private _getSession(): Observable<string> {
-    let sessionDataModel: SessionDataModel = {};
     const localStorageSessionKey = this.storage.get(SESSION_KEY);
     if (localStorageSessionKey != undefined) {
       this.sessionStorageService.setSession(localStorageSessionKey);
-      sessionDataModel = { sessionId: localStorageSessionKey };
     }
-    return this.http.post<SessionDataModel>('getSession', sessionDataModel).pipe(tap(
+    return this.http.get<SessionDataModel>('getSession').pipe(tap(
       sessionData => {
-        if ((sessionData.route != undefined) && (sessionData.route != 'login')) {
-          this.sessionStorageService.setSession(sessionData.sessionId);
-          !!sessionDataModel.sessionId && this.storage.set(SESSION_KEY, sessionData.sessionId);
-        }
+        !!sessionData.publicKey && this.sessionStorageService.setEncryptionKey(sessionData.publicKey);
       }
     ),
       map(

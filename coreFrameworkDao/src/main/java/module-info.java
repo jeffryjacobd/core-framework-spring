@@ -12,6 +12,8 @@ module core.framework.dao {
 
 	requires transitive spring.core;
 
+	requires transitive spring.security.core;
+
 	requires transitive com.datastax.oss.driver.querybuilder;
 
 	requires transitive spring.session.core;
@@ -26,7 +28,7 @@ module core.framework.dao {
 
 	exports com.jcb.handlers.spring.bean.dao;
 
-	exports com.jcb.entity to core.framework;
+	exports com.jcb.entity to core.framework, core.framework.biz;
 
 	opens com.jcb.handlers.cassandra.helper to spring.beans, spring.core, spring.context;
 

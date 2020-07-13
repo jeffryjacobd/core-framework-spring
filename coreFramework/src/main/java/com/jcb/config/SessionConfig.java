@@ -1,5 +1,7 @@
 package com.jcb.config;
 
+import static com.jcb.entity.WebSession.DEFAULT_SESSION_HEADER;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
@@ -12,7 +14,6 @@ import com.jcb.handlers.spring.session.initializer.WebSessionStore;
 @Import({ WebSessionStore.class, WebSessionManager.class })
 @Component
 public class SessionConfig {
-	public static final String DEFAULT_SESSION_HEADER = "X-Auth-Token";
 
 	@Bean
 	public WebSessionIdResolver sessionHeaderIdResolver() {

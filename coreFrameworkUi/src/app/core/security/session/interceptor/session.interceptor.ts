@@ -4,7 +4,8 @@ import {
   HttpHandler,
   HttpEvent,
   HttpInterceptor,
-  HttpResponse
+  HttpResponse,
+  HttpErrorResponse
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SessionStorageService } from '../service/session-storage.service';
@@ -20,8 +21,14 @@ export class SessionInterceptor implements HttpInterceptor {
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     (this.sessionStorageService.getSession() != undefined) && (request = request.clone({ setHeaders: { 'X-Auth-Token': this.sessionStorageService.getSession() } }));
     return next.handle(request).pipe(tap(
-      event => {
+      (event) => {
         if (event instanceof HttpResponse) {
+          const authToken = event.headers.get('X-Auth-Token');
+          this.sessionStorageService.setSession(authToken);
+          this.storage.set(SESSION_KEY, authToken);
+        }
+      }, (event) => {
+        if (event instanceof HttpErrorResponse) {
           const authToken = event.headers.get('X-Auth-Token');
           this.sessionStorageService.setSession(authToken);
           this.storage.set(SESSION_KEY, authToken);

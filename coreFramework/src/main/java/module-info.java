@@ -9,13 +9,13 @@ module core.framework {
 
 	requires java.base;
 
-	requires transitive core.framework.web;
+	requires core.framework.web;
 
 	requires spring.boot.autoconfigure;
 
-	requires transitive spring.webflux;
+	requires spring.webflux;
 
-	requires transitive org.apache.commons.lang3;
+	requires org.apache.commons.lang3;
 
 	requires spring.boot;
 

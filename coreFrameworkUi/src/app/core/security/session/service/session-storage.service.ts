@@ -8,6 +8,14 @@ export class SessionStorageService {
   private _sessionStorageModel: SessionStorageModel = {};
   constructor() { }
 
+  setEncryptionKey(encryptionKey: string) {
+    this._sessionStorageModel.encryptionKey = encryptionKey;
+  }
+
+  getEncryptionKey() {
+    return this._sessionStorageModel.encryptionKey;
+  }
+
   setLoginTime() {
     this._sessionStorageModel.loginTime = Date.now();
   }
@@ -26,12 +34,14 @@ export class SessionStorageService {
 
   clearSession(): void {
     this._sessionStorageModel.sessionId = undefined;
-    this._sessionStorageModel = undefined;
     this._sessionStorageModel.loginTime = undefined;
+    this._sessionStorageModel.encryptionKey = undefined;
+    this._sessionStorageModel = undefined;
   }
 }
 
 interface SessionStorageModel {
   sessionId?: string;
   loginTime?: number;
+  encryptionKey?: string;
 }

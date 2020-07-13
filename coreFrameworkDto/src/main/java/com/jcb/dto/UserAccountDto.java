@@ -3,14 +3,13 @@
  */
 package com.jcb.dto;
 
-import com.jcb.annotation.CassandraTable;
-import com.jcb.annotation.ClusteringKeyColumn;
-import com.jcb.annotation.PartitionKeyColumn;
-import com.jcb.constants.enumeration.Gender;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import com.jcb.annotation.CassandraTable;
+import com.jcb.annotation.PartitionKeyColumn;
+import com.jcb.constants.enumeration.Gender;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,31 +27,33 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UserAccountDto {
 
-    @PartitionKeyColumn(0)
-    private String userName;
+	@PartitionKeyColumn(0)
+	private String userName;
 
-    @ClusteringKeyColumn(0)
-    private String firstName;
+	private String lastName;
 
-    @ClusteringKeyColumn(1)
-    private String middleName;
+	private String password;
 
-    private String lastName;
+	private UUID companyId;
 
-    private String password;
+	private LocalDate dateOfBirth;
 
-    private UUID companyId;
+	private Gender gender;
 
-    private LocalDate dateOfBirth;
+	private List<String> roles;
 
-    private Gender gender;
+	private String email;
 
-    private List<String> roles;
+	private String phoneNo;
 
-    private String email;
+	private String extNo;
 
-    private String phoneNo;
+	private boolean accountExpired;
 
-    private String extNo;
+	private boolean accountLocked;
+
+	private boolean credentialsExpired;
+
+	private boolean enabled;
 
 }

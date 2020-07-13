@@ -16,4 +16,6 @@ public interface RoleDao {
 	public Mono<Boolean> insert(RoleDto data);
 
 	public Flux<RoleDto> getAll();
+
+	public Mono<RoleDto> get(String role);
 }

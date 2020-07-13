@@ -14,8 +14,10 @@ import reactor.core.publisher.Mono;
  */
 public interface UserAccountDao {
 
-    public Mono<Boolean> insert(UserAccountDto data);
+	public Mono<Boolean> insert(UserAccountDto data);
 
-    public Flux<UserAccountDto> getAll(String... specificColumns);
+	public Flux<UserAccountDto> getAll(String... specificColumns);
+
+	public Mono<UserAccountDto> get(String userName);
 
 }

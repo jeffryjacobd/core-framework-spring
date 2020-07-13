@@ -8,6 +8,6 @@ import com.jcb.web.router.StaticFilesRouter;
 
 @Configuration
 @Import({ StaticFilesRouter.class, LoginRouter.class, WebSecurityConfig.class })
-public class RouterConfig {
+public class WebMainConfig {
 
 }

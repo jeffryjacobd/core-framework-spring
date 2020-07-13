@@ -1,9 +1,11 @@
 package com.jcb.handlers.spring.session.initializer;
 
 import static com.jcb.entity.WebSession.IP_KEY;
+import static com.jcb.entity.WebSession.USER_AGENT;
 import static com.jcb.entity.WebSession.USER_NAME_KEY;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebSession;
@@ -51,8 +53,10 @@ public class WebSessionManager implements org.springframework.web.server.session
 			return Mono.empty();
 		}
 		com.jcb.entity.WebSession session = new com.jcb.entity.WebSession();
-		session.getAttributes().put(IP_KEY, exchange.getRequest().getRemoteAddress().getHostString());
+		ServerHttpRequest request = exchange.getRequest();
+		session.getAttributes().put(IP_KEY, request.getRemoteAddress().getHostString());
 		session.getAttributes().put(USER_NAME_KEY, "");
+		session.getAttributes().put(USER_AGENT, String.join(".", request.getHeaders().get(USER_AGENT)));
 		return this.sessionDao.insert(session.convertToDto()).flatMap(insertResult -> {
 			com.jcb.handlers.spring.session.initializer.WebSessionStore.sessionMapFifoCache.put(session.getId(),
 					session);
@@ -68,7 +72,12 @@ public class WebSessionManager implements org.springframework.web.server.session
 			if (sessionId.isEmpty()) {
 				return Mono.empty();
 			}
-			return this.sessionStore.retrieveSession(sessionId);
+			return this.sessionStore.retrieveSession(sessionId).filter(webSession -> {
+				ServerHttpRequest request = exchange.getRequest();
+				return ((request.getRemoteAddress().getHostString().equals(webSession.getAttribute(IP_KEY).toString()))
+						&& (String.join(".", request.getHeaders().get(USER_AGENT)) == webSession
+								.getAttribute(USER_AGENT).toString()));
+			});
 		});
 
 	}

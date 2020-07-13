@@ -8,10 +8,10 @@ import com.jcb.service.crypt.keygeneration.AESKeyGeneratorService;
 import com.jcb.service.crypt.keygeneration.RSAKeyGeneratorService;
 import com.jcb.service.crypt.keygeneration.impl.AESKeyGeneratorServiceImpl;
 import com.jcb.service.crypt.keygeneration.impl.RSAKeyGeneratorServiceImpl;
-import com.jcb.service.security.config.AutheticationConfig;
+import com.jcb.service.security.config.AuthenticationConfig;
 import com.jcb.web.handler.config.HandlerConfig;
 
-@Import({ HandlerConfig.class, AutheticationConfig.class })
+@Import({ HandlerConfig.class, AuthenticationConfig.class })
 @Configuration
 public class BizMainConfig {
 

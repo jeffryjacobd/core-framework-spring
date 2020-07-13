@@ -4,11 +4,17 @@ module core.framework.biz {
 
 	requires transitive spring.webflux;
 
+	requires transitive spring.security.web;
+
 	requires transitive nimbus.jose.jwt;
 
 	exports com.jcb.biz.config to core.framework;
 
 	exports com.jcb.web.handler to core.framework.web;
+
+	exports com.jcb.handlers.spring.session.config to core.framework;
+
+	opens com.jcb.handlers.spring.session.config to spring.core, spring.beans, spring.context;
 
 	opens com.jcb.web.handler to spring.core, spring.beans, spring.context;
 
@@ -17,6 +23,8 @@ module core.framework.biz {
 	opens com.jcb.web.handler.config to spring.core, spring.beans, spring.context;
 
 	opens com.jcb.biz.config to spring.core, spring.beans, spring.context;
+
+	opens com.jcb.handlers.spring.session.initializer to spring.core, spring.beans, spring.context;
 
 	opens com.jcb.service.security.config to spring.core, spring.beans, spring.context;
 

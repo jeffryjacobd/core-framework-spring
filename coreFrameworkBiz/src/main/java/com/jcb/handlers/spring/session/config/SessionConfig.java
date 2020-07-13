@@ -1,4 +1,4 @@
-package com.jcb.config;
+package com.jcb.handlers.spring.session.config;
 
 import static com.jcb.entity.WebSession.DEFAULT_SESSION_HEADER;
 

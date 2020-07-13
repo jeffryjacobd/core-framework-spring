@@ -8,6 +8,7 @@ import org.springframework.web.reactive.config.EnableWebFlux;
 import com.jcb.biz.config.BizMainConfig;
 import com.jcb.handlers.jwt.JwtAuthenticationManager;
 import com.jcb.handlers.spring.bean.dao.DaoTemplateBeanCreator;
+import com.jcb.handlers.spring.session.config.SessionConfig;
 import com.jcb.web.config.WebMainConfig;
 
 @Configuration

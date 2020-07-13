@@ -75,8 +75,8 @@ public class WebSessionManager implements org.springframework.web.server.session
 			return this.sessionStore.retrieveSession(sessionId).filter(webSession -> {
 				ServerHttpRequest request = exchange.getRequest();
 				return ((request.getRemoteAddress().getHostString().equals(webSession.getAttribute(IP_KEY).toString()))
-						&& (String.join(".", request.getHeaders().get(USER_AGENT)) == webSession
-								.getAttribute(USER_AGENT).toString()));
+						&& (String.join(".", request.getHeaders().get(USER_AGENT))
+								.equals(webSession.getAttribute(USER_AGENT).toString())));
 			});
 		});
 

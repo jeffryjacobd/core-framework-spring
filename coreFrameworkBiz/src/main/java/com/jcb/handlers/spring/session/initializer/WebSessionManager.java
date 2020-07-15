@@ -5,6 +5,8 @@ import static com.jcb.entity.WebSession.USER_AGENT;
 import static com.jcb.entity.WebSession.USER_NAME_KEY;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -45,7 +47,10 @@ public class WebSessionManager implements org.springframework.web.server.session
 		if (ispublicFile(exchange)) {
 			return;
 		}
-		this.sessionIdResolver.setSessionId(exchange, updatedSession.getId());
+		if (exchange.getResponse().getStatusCode() == HttpStatus.OK
+				|| exchange.getRequest().getMethod() == HttpMethod.POST) {
+			this.sessionIdResolver.setSessionId(exchange, updatedSession.getId());
+		}
 	}
 
 	private Mono<? extends WebSession> createWebSession(ServerWebExchange exchange) {

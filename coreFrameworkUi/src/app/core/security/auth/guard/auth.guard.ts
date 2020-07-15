@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { AuthService } from '../service/auth.service';
 
 @Injectable({
@@ -16,7 +16,8 @@ export class AuthGuard implements CanActivate {
     return this.authService.isAuthenticated().pipe(map(
       (url) => {
         if (url == 'true') { return true; } else {
-          return this.router.createUrlTree([url], { skipLocationChange: true });
+          this.router.navigateByUrl(url, { skipLocationChange: true, replaceUrl: false });
+          return false;
         }
       }
     ))

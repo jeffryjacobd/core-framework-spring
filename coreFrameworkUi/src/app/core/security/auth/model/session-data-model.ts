@@ -1,4 +1,4 @@
 export interface SessionDataModel {
-    publicKey?: string;
+    key?: string;
     route?: string;
 }

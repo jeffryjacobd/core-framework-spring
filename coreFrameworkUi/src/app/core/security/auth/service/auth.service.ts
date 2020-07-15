@@ -35,9 +35,9 @@ export class AuthService {
     if (localStorageSessionKey != undefined) {
       this.sessionStorageService.setSession(localStorageSessionKey);
     }
-    return this.http.get<SessionDataModel>('getSession').pipe(tap(
+    return this.http.post<SessionDataModel>('getSession', {}).pipe(tap(
       sessionData => {
-        !!sessionData.publicKey && this.sessionStorageService.setEncryptionKey(sessionData.publicKey);
+        !!sessionData.key && this.sessionStorageService.setEncryptionKey(sessionData.key);
       }
     ),
       map(

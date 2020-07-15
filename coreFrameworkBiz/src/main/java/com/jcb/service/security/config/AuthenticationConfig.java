@@ -1,17 +1,15 @@
 package com.jcb.service.security.config;
 
-import static com.jcb.entity.WebSession.USER_NAME_KEY;
-
-import java.util.List;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.web.server.ServerWebExchange;
 
 import com.jcb.service.security.UserAuthenticationService;
+import com.jcb.service.security.impl.SessionBasedAuthenticationManager;
 import com.jcb.service.security.impl.UserAuthenticationServiceImpl;
 
 import reactor.core.publisher.Mono;
@@ -29,10 +27,14 @@ public class AuthenticationConfig {
 			@Override
 			public Mono<Authentication> convert(ServerWebExchange exchange) {
 				return exchange.getSession().map(webSession -> {
-					return new AnonymousAuthenticationToken(webSession.getAttributes().get(USER_NAME_KEY).toString(),
-							webSession, List.of());
+					return new PreAuthenticatedAuthenticationToken(webSession, null);
 				});
 			}
 		};
+	}
+
+	@Bean
+	public ReactiveAuthenticationManager authenticationManager() {
+		return new SessionBasedAuthenticationManager();
 	}
 }

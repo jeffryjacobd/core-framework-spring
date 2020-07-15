@@ -2,7 +2,7 @@ module core.framework.web {
 
 	requires transitive core.framework.biz;
 
-	requires spring.security.config;
+	requires transitive spring.security.config;
 
 	requires transitive spring.security.web;
 

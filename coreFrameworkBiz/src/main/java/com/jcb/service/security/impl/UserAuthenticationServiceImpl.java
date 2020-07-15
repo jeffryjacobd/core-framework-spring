@@ -61,7 +61,7 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 	public Mono<UserDetails> updatePassword(UserDetails user, String newPassword) {
 		com.jcb.entity.UserDetails currentUserDetails = (com.jcb.entity.UserDetails) user;
 		currentUserDetails.setPassword(newPassword);
-		return userAccountDao.insert(currentUserDetails.convertToDto()).then(Mono.just(currentUserDetails));
+		return userAccountDao.insert(currentUserDetails.convertToDto(true)).then(Mono.just(currentUserDetails));
 	}
 
 }

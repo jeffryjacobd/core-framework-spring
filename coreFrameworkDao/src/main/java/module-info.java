@@ -38,4 +38,6 @@ module core.framework.dao {
 
 	opens com.jcb.dao to spring.beans, spring.core, spring.context, core.framework;
 
+	opens com.jcb.entity to com.fasterxml.jackson.databind;
+
 }

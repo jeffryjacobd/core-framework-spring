@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
 import com.jcb.dto.UserAccountDto;
 
@@ -21,6 +22,8 @@ public class UserDetails implements org.springframework.security.core.userdetail
 		private String authority;
 
 	}
+
+	private static transient final Argon2PasswordEncoder encoder = new Argon2PasswordEncoder();
 
 	@Getter
 	@Setter
@@ -66,10 +69,14 @@ public class UserDetails implements org.springframework.security.core.userdetail
 		return userDetails;
 	}
 
-	public UserAccountDto convertToDto() {
+	public UserAccountDto convertToDto(boolean encodePassword) {
 		UserAccountDto userAccountDto = new UserAccountDto();
 		userAccountDto.setUserName(this.getUsername());
-		userAccountDto.setPassword(this.getPassword());
+		if (encodePassword) {
+			userAccountDto.setPassword(encoder.encode(this.getPassword()));
+		} else {
+			userAccountDto.setPassword(this.getPassword());
+		}
 		userAccountDto.setAccountExpired(!this.isAccountNonExpired());
 		userAccountDto.setAccountLocked(!this.isAccountNonLocked());
 		userAccountDto.setEnabled(this.isEnabled());

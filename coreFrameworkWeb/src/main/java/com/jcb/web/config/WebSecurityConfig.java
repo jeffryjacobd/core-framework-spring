@@ -28,9 +28,6 @@ public class WebSecurityConfig {
 
 	@Bean
 	public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-
-		new NegatedServerWebExchangeMatcher(
-				ServerWebExchangeMatchers.pathMatchers("/", "/*.js", "/*.js.map", "/*.ico"));
 		// TO DO CSRF
 		http.authorizeExchange().anyExchange().permitAll().and().csrf().disable();
 		http.addFilterAt(authenticationWebFilter(), SecurityWebFiltersOrder.AUTHENTICATION);
@@ -42,6 +39,8 @@ public class WebSecurityConfig {
 		AuthenticationWebFilter webFilter = new AuthenticationWebFilter(authenticationManager);
 		webFilter.setServerAuthenticationConverter(serverAuthenticationConverter);
 		webFilter.setAuthenticationFailureHandler(loginHandler::doLogoutHandler);
+		webFilter.setRequiresAuthenticationMatcher(new NegatedServerWebExchangeMatcher(
+				ServerWebExchangeMatchers.pathMatchers("/", "/*.js", "/*.js.map", "/*.ico", "/login")));
 		return webFilter;
 	}
 }

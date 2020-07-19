@@ -106,7 +106,7 @@ public class CassandraQueryHelperUtility {
 				if (result.hasMorePages()) {
 					fetchNextPage(result, asyncResult);
 				} else {
-					this.currentAsyncResult = this.previousAsyncResult;
+					this.previousAsyncResult = this.currentAsyncResult;
 				}
 				return result;
 			});
@@ -129,7 +129,7 @@ public class CassandraQueryHelperUtility {
 	}
 
 	@SuppressWarnings("unchecked")
-	private <DtoName> DtoName mapReactiveResultToDto(Row reactiveRow, Class<DtoName> dtoClass) {
+	private synchronized <DtoName> DtoName mapReactiveResultToDto(Row reactiveRow, Class<DtoName> dtoClass) {
 		Object dto = null;
 		try {
 			dto = dtoClass.getDeclaredConstructor().newInstance();

@@ -14,6 +14,8 @@ module core.framework.biz {
 
 	exports com.jcb.handlers.spring.session.config to core.framework;
 
+	exports com.jcb.service.crypt.keygeneration;
+
 	opens com.jcb.handlers.spring.session.config to spring.core, spring.beans, spring.context;
 
 	opens com.jcb.web.handler to spring.core, spring.beans, spring.context;

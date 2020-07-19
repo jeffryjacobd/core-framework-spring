@@ -50,14 +50,16 @@ public class RSAKeyGeneratorServiceImpl implements RSAKeyGeneratorService {
 
 	@Override
 	public Flux<RSAKey> getRSAKey(Integer count) {
-		return Flux.range(0, count).parallel(count)
-				.runOn(Schedulers.newBoundedElastic(count, count, "RSACreation", 5, false)).map((index) -> {
-					return new Random().nextInt(MAXIMUM_COUNT);
-				}).map(randomIndex -> {
-					RSAKey keyToReturn = cacheMap.get(randomIndex);
-					cacheMap.put(randomIndex, generateKeyPair());
-					LOG.info("Created {} RSA key pairs", count);
-					return keyToReturn;
-				}).sequential();
+		return Flux.range(0, count).parallel(count).runOn(Schedulers.boundedElastic()).map((index) -> {
+			return new Random().nextInt(MAXIMUM_COUNT);
+		}).map(randomIndex -> {
+			RSAKey keyToReturn = cacheMap.get(randomIndex);
+			cacheMap.put(randomIndex, generateKeyPair());
+			if (keyToReturn == null) {
+				keyToReturn = cacheMap.get(randomIndex);
+			}
+			LOG.info("Created {} RSA key pairs", count);
+			return keyToReturn;
+		}).sequential();
 	}
 }

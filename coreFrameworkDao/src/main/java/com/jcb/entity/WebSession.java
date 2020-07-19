@@ -8,10 +8,16 @@ import java.util.UUID;
 
 import com.jcb.dto.SessionDto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import reactor.core.publisher.Mono;
 
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class WebSession implements org.springframework.web.server.WebSession {
 
 	public transient static final String DEFAULT_SESSION_HEADER = "X-Auth-Token";
@@ -21,6 +27,10 @@ public class WebSession implements org.springframework.web.server.WebSession {
 	public transient static final String IP_KEY = "ip-address-key";
 
 	public transient static final String USER_AGENT = "User-Agent";
+
+	public transient static final String ENCRYPTION_KEY = "encryption-key";
+
+	public transient static final String SAVE_ON_UPDATE = "save-on-update";
 
 	@Getter
 	@Setter

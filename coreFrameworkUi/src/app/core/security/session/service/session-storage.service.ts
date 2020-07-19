@@ -1,4 +1,5 @@
 import { Injectable, Inject } from '@angular/core';
+import * as forge from 'node-forge';
 
 @Injectable({
   providedIn: 'root'
@@ -7,6 +8,14 @@ export class SessionStorageService {
 
   private _sessionStorageModel: SessionStorageModel = {};
   constructor() { }
+
+  setDecryptionKey(decryptionKey: string) {
+    this._sessionStorageModel.decryptionKey = decryptionKey;
+  }
+
+  getDecryptionKey() {
+    return this._sessionStorageModel.decryptionKey;
+  }
 
   setEncryptionKey(encryptionKey: string) {
     this._sessionStorageModel.encryptionKey = encryptionKey;
@@ -35,7 +44,12 @@ export class SessionStorageService {
   clearSession(): void {
     this._sessionStorageModel.sessionId = undefined;
     this._sessionStorageModel.loginTime = undefined;
+  }
+  clearData(): void {
+    this._sessionStorageModel.sessionId = undefined;
+    this._sessionStorageModel.loginTime = undefined;
     this._sessionStorageModel.encryptionKey = undefined;
+    this._sessionStorageModel.decryptionKey = undefined;
     this._sessionStorageModel = undefined;
   }
 }
@@ -44,4 +58,5 @@ interface SessionStorageModel {
   sessionId?: string;
   loginTime?: number;
   encryptionKey?: string;
+  decryptionKey?: string;
 }

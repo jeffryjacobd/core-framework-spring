@@ -3,6 +3,7 @@ import { InputType } from '../../component/jcb-text-input/jcb-text-input.compone
 import { ButtonIcon } from '../../component/jcb-button/jcb-button.component';
 import { AuthService } from '../../security/auth/service/auth.service';
 import { UserModel } from '../../security/auth/model/user-model'
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -30,11 +31,11 @@ export class LoginComponent implements OnInit {
   isLocalStorage(state: boolean) {
     this.rememberMe = state;
   }
-  loginButtonClicked() {
+  loginButtonClicked(): void {
     this.buttonIcon = ButtonIcon.loading;
     this.disableLoginButton = true;
-    const userModel: UserModel = { user: this.id, password: this.password, rememberMe: this.rememberMe };
-    this.authservice.login(userModel);
+    const userModel: UserModel = { user: this.id || '', password: this.password || '', rememberMe: this.rememberMe || false };
+    this.authservice.login(userModel).subscribe();
   }
 
   ngOnInit(): void {

@@ -51,14 +51,16 @@ public class AESKeyGeneratorServiceImpl implements AESKeyGeneratorService {
 
 	@Override
 	public Flux<OctetSequenceKey> getAESKey(Integer count) {
-		return Flux.range(0, count).parallel(count)
-				.runOn(Schedulers.newBoundedElastic(count, count, "AESCreation", 5, false)).map((index) -> {
-					return new Random().nextInt(MAXIMUM_COUNT);
-				}).map(randomIndex -> {
-					OctetSequenceKey keyToReturn = cacheMap.get(randomIndex);
-					cacheMap.put(randomIndex, generateKeyPair());
-					LOG.info("Created {} AES keys", count);
-					return keyToReturn;
-				}).sequential();
+		return Flux.range(0, count).parallel(count).runOn(Schedulers.boundedElastic()).map((index) -> {
+			return new Random().nextInt(MAXIMUM_COUNT);
+		}).map(randomIndex -> {
+			OctetSequenceKey keyToReturn = cacheMap.get(randomIndex);
+			cacheMap.put(randomIndex, generateKeyPair());
+			if (keyToReturn == null) {
+				keyToReturn = cacheMap.get(randomIndex);
+			}
+			LOG.info("Created {} AES keys", count);
+			return keyToReturn;
+		}).sequential();
 	}
 }

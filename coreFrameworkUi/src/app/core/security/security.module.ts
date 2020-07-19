@@ -4,6 +4,7 @@ import { LoginComponent } from './login/login.component';
 import { ComponentModule } from '../component/component.module';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { SessionInterceptor } from './session/interceptor/session.interceptor'
+import { EncryptionInterceptor } from './encryption/interceptor/encryption.interceptor'
 import { AuthService } from './auth/service/auth.service';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { SessionStorageService } from './session/service/session-storage.service';
@@ -18,6 +19,10 @@ import { SessionStorageService } from './session/service/session-storage.service
     {
       provide: HTTP_INTERCEPTORS,
       useClass: SessionInterceptor,
+      multi: true,
+    }, {
+      provide: HTTP_INTERCEPTORS,
+      useClass: EncryptionInterceptor,
       multi: true,
     }, AuthService, AuthGuard, SessionStorageService]
 })

@@ -4,8 +4,8 @@ import { UserModel } from '../model/user-model';
 import { SessionDataModel } from '../model/session-data-model';
 import { SessionStorageService } from '../../session/service/session-storage.service';
 import { LOCAL_STORAGE, StorageService } from 'ngx-webstorage-service';
-import { Observable, of } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { Observable, of, CompletionObserver } from 'rxjs';
+import { map, tap, flatMap, mergeMap } from 'rxjs/operators';
 
 const SESSION_KEY = 'sessionId';
 
@@ -14,6 +14,11 @@ const SESSION_KEY = 'sessionId';
 })
 export class AuthService {
 
+  private loginCompleteObserver: CompletionObserver<any> = <CompletionObserver<any>>{
+    complete: () => {
+      this.sessionStorageService.setLoginTime();
+    }
+  };
 
   constructor(private http: HttpClient, private sessionStorageService: SessionStorageService, @Inject(LOCAL_STORAGE) private storage: StorageService) { }
 
@@ -25,9 +30,9 @@ export class AuthService {
   }
 
   login(userModel: UserModel) {
-    if (userModel.rememberMe) {
-      //TODO local session store
-    }
+    return this.http.post<any>('login', userModel).pipe(tap(this.loginCompleteObserver), mergeMap((loginResponse) => {
+      return this.http.post<any>('handshake', {});
+    }));
   }
 
   private _getSession(): Observable<string> {
@@ -38,6 +43,7 @@ export class AuthService {
     return this.http.post<SessionDataModel>('getSession', {}).pipe(tap(
       sessionData => {
         !!sessionData.key && this.sessionStorageService.setEncryptionKey(sessionData.key);
+        this.sessionStorageService.setLoginTime();
       }
     ),
       map(

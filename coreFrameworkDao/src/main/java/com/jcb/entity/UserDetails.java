@@ -23,7 +23,7 @@ public class UserDetails implements org.springframework.security.core.userdetail
 
 	}
 
-	private static transient final Argon2PasswordEncoder encoder = new Argon2PasswordEncoder();
+	public static transient final Argon2PasswordEncoder encoder = new Argon2PasswordEncoder();
 
 	@Getter
 	@Setter

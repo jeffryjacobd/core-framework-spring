@@ -70,6 +70,10 @@ public class WebSessionStore implements org.springframework.web.server.session.W
 		com.jcb.entity.WebSession session = (com.jcb.entity.WebSession) webSession;
 		session.save();
 		sessionMapFifoCache.put(session.getId(), session);
+		if (session.getAttributeOrDefault(com.jcb.entity.WebSession.SAVE_ON_UPDATE, false)) {
+			session.getAttributes().remove(com.jcb.entity.WebSession.SAVE_ON_UPDATE);
+			return sessionDao.insert(session.convertToDto()).thenReturn(session);
+		}
 		return Mono.just(session);
 	}
 

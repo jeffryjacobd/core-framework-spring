@@ -12,6 +12,7 @@ import { SessionStorageService } from '../service/session-storage.service';
 import { tap } from 'rxjs/operators';
 import { StorageService, LOCAL_STORAGE } from 'ngx-webstorage-service';
 import { Router } from '@angular/router';
+import { SessionDataModel } from '../../auth/model/session-data-model';
 
 @Injectable({
   providedIn: 'root'
@@ -33,7 +34,11 @@ export class SessionInterceptor implements HttpInterceptor {
           const authToken = event.headers.get(SESSION_TOKEN_KEY);
           this.sessionStorageService.setSession(authToken);
           this.storage.set(SESSION_KEY, authToken);
-          (event.status.valueOf() == 401) && (this.router.navigateByUrl('login', { skipLocationChange: true, replaceUrl: false }));
+          if (event.status.valueOf() == 401) {
+            const model: SessionDataModel = event.error;
+            this.sessionStorageService.setEncryptionKey(model.key);
+            this.router.navigateByUrl(model.route, { skipLocationChange: true, replaceUrl: false });
+          }
         }
       }
     ));

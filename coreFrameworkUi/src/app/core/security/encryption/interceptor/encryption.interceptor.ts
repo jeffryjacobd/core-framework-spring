@@ -14,6 +14,7 @@ import { mergeMap, map, tap } from 'rxjs/operators';
 import { SessionDataModel } from '../../auth/model/session-data-model';
 import { SessionStorageService } from '../../session/service/session-storage.service';
 import { Router } from '@angular/router';
+import { UserModel } from '../../auth/model/user-model';
 
 @Injectable()
 export class EncryptionInterceptor implements HttpInterceptor {
@@ -30,7 +31,9 @@ export class EncryptionInterceptor implements HttpInterceptor {
     }
   }
   private loginFilter(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    return next.handle(request);
+    return this.encrptionService.encryptWithRsaPublicKeyString(request.body, this.sessionStorageService.getEncryptionKey()).pipe(mergeMap(encryptedContents => {
+      return next.handle(request.clone({ body: encryptedContents }));
+    }))
   }
 
   private handshakeFilter(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
@@ -38,6 +41,7 @@ export class EncryptionInterceptor implements HttpInterceptor {
       request = request.clone({ body: keyPair.publicKey });
       return next.handle(request).pipe(map(response => {
         if (response instanceof HttpResponse) {
+          this.encrptionService.stopRsaKeyPairCreation();
           const deCrytedString = this.encrptionService.decryptRsaContent(response.body, keyPair.privateKey);
           const model: SessionDataModel = JSON.parse(deCrytedString);
           this.sessionStorageService.setEncryptionKey(model.key);
@@ -47,6 +51,8 @@ export class EncryptionInterceptor implements HttpInterceptor {
         return response;
       }), tap(undefined, errorResponse => {
         if ((errorResponse instanceof HttpErrorResponse) && (errorResponse.status != 200)) {
+          this.encrptionService.startRsaKeyPairCreation();
+          this.sessionStorageService.clearSession();
           this.router.navigateByUrl('login', { skipLocationChange: true, replaceUrl: false })
         }
       }));

@@ -7,7 +7,7 @@ import com.jcb.web.router.LoginRouter;
 import com.jcb.web.router.StaticFilesRouter;
 
 @Configuration
-@Import({ StaticFilesRouter.class, LoginRouter.class, WebSecurityConfig.class })
+@Import({ FilterInjectAspect.class, StaticFilesRouter.class, LoginRouter.class, WebSecurityConfig.class })
 public class WebMainConfig {
 
 }

@@ -6,6 +6,8 @@ package com.jcb.service.security.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -62,6 +64,14 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 		com.jcb.entity.UserDetails currentUserDetails = (com.jcb.entity.UserDetails) user;
 		currentUserDetails.setPassword(newPassword);
 		return userAccountDao.insert(currentUserDetails.convertToDto(true)).then(Mono.just(currentUserDetails));
+	}
+
+	@PostConstruct
+	public void insertTestData() {
+		com.jcb.entity.UserDetails currentUserDetails = new com.jcb.entity.UserDetails();
+		currentUserDetails.setUsername("jeffry");
+		currentUserDetails.setPassword("jeffry");
+		userAccountDao.insert(currentUserDetails.convertToDto(true)).block();
 	}
 
 }

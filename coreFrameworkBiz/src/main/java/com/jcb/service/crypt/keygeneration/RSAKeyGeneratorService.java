@@ -1,18 +1,17 @@
 package com.jcb.service.crypt.keygeneration;
 
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.jwk.RSAKey;
+import java.security.KeyPair;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface RSAKeyGeneratorService {
 
-	RSAKey generateKeyPair() throws JOSEException;
+	Mono<KeyPair> generateKeyPair();
 
-	Flux<RSAKey> getRSAKey(Integer count);
+	Flux<KeyPair> getRSAKey(Integer count);
 
-	default Mono<RSAKey> getRSAKey() {
+	default Mono<KeyPair> getRSAKey() {
 		return getRSAKey(1).next();
 	}
 

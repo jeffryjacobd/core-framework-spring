@@ -18,14 +18,18 @@ export class LoginComponent implements OnInit {
   InputType = InputType;
   ButtonIcon = ButtonIcon;
   buttonIcon: ButtonIcon = undefined;
+  isIdChangeEventEnabled: boolean = true;
+  isPwdChangeEventEnabled: boolean = true;
 
   constructor(private authservice: AuthService) { }
   updateId(value: string): void {
     this.id = value;
+    this.isIdChangeEventEnabled = false;
   }
 
   updatePassword(value: string): void {
     this.password = value;
+    this.isPwdChangeEventEnabled = false;
   }
 
   isLocalStorage(state: boolean) {

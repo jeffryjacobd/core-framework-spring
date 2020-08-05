@@ -42,7 +42,6 @@ export class SessionStorageService {
   }
 
   clearSession(): void {
-    this._sessionStorageModel.sessionId = undefined;
     this._sessionStorageModel.loginTime = undefined;
   }
   clearData(): void {

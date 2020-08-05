@@ -129,7 +129,7 @@ public class CassandraQueryHelperUtility {
 	}
 
 	@SuppressWarnings("unchecked")
-	private synchronized <DtoName> DtoName mapReactiveResultToDto(Row reactiveRow, Class<DtoName> dtoClass) {
+	private <DtoName> DtoName mapReactiveResultToDto(Row reactiveRow, Class<DtoName> dtoClass) {
 		Object dto = null;
 		try {
 			dto = dtoClass.getDeclaredConstructor().newInstance();

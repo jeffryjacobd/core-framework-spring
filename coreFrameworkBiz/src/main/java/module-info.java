@@ -8,13 +8,19 @@ module core.framework.biz {
 
 	requires transitive nimbus.jose.jwt;
 
+	requires org.bouncycastle.provider;
+
+	requires transitive org.apache.commons.lang3;
+
 	exports com.jcb.biz.config to core.framework;
 
 	exports com.jcb.web.handler to core.framework.web;
 
 	exports com.jcb.handlers.spring.session.config to core.framework;
 
-	exports com.jcb.service.crypt.keygeneration;
+	exports com.jcb.service.crypt.keygeneration to core.framework.web, core.framework;
+
+	exports com.jcb.service.security to core.framework.web, core.framework;
 
 	opens com.jcb.handlers.spring.session.config to spring.core, spring.beans, spring.context;
 

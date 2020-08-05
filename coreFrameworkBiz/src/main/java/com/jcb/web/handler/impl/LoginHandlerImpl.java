@@ -1,7 +1,13 @@
 package com.jcb.web.handler.impl;
 
-import static com.jcb.entity.WebSession.ENCRYPTION_KEY;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.interfaces.RSAPublicKey;
 
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
@@ -11,7 +17,6 @@ import org.springframework.security.web.server.WebFilterExchange;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import org.springframework.web.server.session.WebSessionStore;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,21 +25,21 @@ import com.jcb.entity.UserDetails;
 import com.jcb.entity.UserModel;
 import com.jcb.entity.WebSession;
 import com.jcb.service.crypt.keygeneration.RSAKeyGeneratorService;
+import com.jcb.service.security.AESEncryptionService;
 import com.jcb.service.security.UserAuthenticationService;
 import com.jcb.web.handler.LoginHandler;
 
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 public class LoginHandlerImpl implements LoginHandler {
 	@Autowired
 	private RSAKeyGeneratorService rsaKeyGenerator;
 
 	@Autowired
-	private WebSessionStore websessionStore;
+	private UserAuthenticationService userAuthenticationService;
 
 	@Autowired
-	private UserAuthenticationService userAuthenticationService;
+	private AESEncryptionService aesEncryptionService;
 
 	@Override
 	public Mono<ServerResponse> getSession(ServerRequest request) {
@@ -47,7 +52,7 @@ public class LoginHandlerImpl implements LoginHandler {
 
 	@Override
 	public Mono<ServerResponse> login(ServerRequest request) {
-		return request.bodyToMono(UserModel.class).filter(userModel -> {
+		return Mono.defer(() -> request.bodyToMono(UserModel.class).filter(userModel -> {
 			return !((userModel.getUser().isBlank()) || userModel.getPassword().isBlank());
 		}).flatMap(filteredUserModel -> {
 			return this.userAuthenticationService.findByUsername(filteredUserModel.getUser()).filter(userDetail -> {
@@ -55,27 +60,26 @@ public class LoginHandlerImpl implements LoginHandler {
 			});
 		}).flatMap(userDetail -> {
 			return saveLoginSession(request, userDetail);
-		}).switchIfEmpty(Mono.defer(() -> ServerResponse.status(HttpStatus.UNAUTHORIZED).build()));
+		}).switchIfEmpty(Mono.defer(() -> ServerResponse.status(HttpStatus.UNAUTHORIZED).build())));
 
 	}
 
 	private Mono<ServerResponse> saveLoginSession(ServerRequest request,
 			org.springframework.security.core.userdetails.UserDetails userDetail) {
 		Mono<org.springframework.web.server.WebSession> webSession = request.exchange().getSession();
-		return webSession.flatMap(session -> {
+		return webSession.doOnNext(session -> {
+			session.getAttributes().remove(WebSession.ENCRYPTION_KEY);
 			session.getAttributes().put(WebSession.USER_NAME_KEY, userDetail.getUsername());
 			session.getAttributes().put(WebSession.SAVE_ON_UPDATE, true);
-			return this.websessionStore.updateLastAccessTime(session);
 		}).flatMap(session -> ServerResponse.ok().build());
 	}
 
 	@Override
 	public Mono<ServerResponse> logout(ServerRequest request) {
 		Mono<org.springframework.web.server.WebSession> webSession = request.exchange().getSession();
-		return webSession.flatMap(session -> {
+		return webSession.doOnNext(session -> {
 			session.getAttributes().put(WebSession.USER_NAME_KEY, "");
 			session.getAttributes().put(WebSession.SAVE_ON_UPDATE, true);
-			return this.websessionStore.updateLastAccessTime(session);
 		}).flatMap(session -> ServerResponse.ok().build());
 	}
 
@@ -84,31 +88,48 @@ public class LoginHandlerImpl implements LoginHandler {
 		return Mono.defer(() -> {
 			return rsaKeyGenerator.getRSAKey()
 					.zipWith(webFilterExchange.getExchange().getSession().defaultIfEmpty(WebSession.builder().build()))
-					.flatMap(rsaKeyAndSessionTuple -> {
+					.filter(sessionPublicKeyTuple -> {
+						return !sessionPublicKeyTuple.getT2().getId().isBlank();
+					}).switchIfEmpty(Mono.defer(() -> {
 						ServerHttpResponse response = webFilterExchange.getExchange().getResponse();
-						if (rsaKeyAndSessionTuple.getT2().getId().isBlank()) {
-							response.getHeaders().clearContentHeaders();
-							response.setStatusCode(HttpStatus.UNAUTHORIZED);
-							return Mono.empty();
+						response.getHeaders().clearContentHeaders();
+						response.setStatusCode(HttpStatus.UNAUTHORIZED);
+						return Mono.empty();
+					})).zipWhen(nonEmptyPublicKeySession -> {
+						KeyPair rsaKey = nonEmptyPublicKeySession.getT1();
+						org.springframework.web.server.WebSession session = nonEmptyPublicKeySession.getT2();
+						session.getAttributes().put(WebSession.ENCRYPTION_KEY, rsaKey);
+						RSAPublicKey publicKey = (RSAPublicKey) rsaKey.getPublic();
+						StringWriter writer = new StringWriter();
+						PemWriter pemWriter = new PemWriter(writer);
+						try {
+							pemWriter.writeObject(new PemObject("RSA PUBLIC KEY", publicKey.getEncoded()));
+							pemWriter.flush();
+						} catch (IOException e) {
+							e.printStackTrace();
+							return Mono.error(e);
 						}
-						org.springframework.web.server.WebSession session = rsaKeyAndSessionTuple.getT2();
-						session.getAttributes().put(ENCRYPTION_KEY, rsaKeyAndSessionTuple.getT1());
+						return this.aesEncryptionService.encrypt(writer.toString().getBytes(StandardCharsets.UTF_8),
+								session.getId().getBytes(StandardCharsets.UTF_8), true);
+					}, (tuple, encryptedRsaKeyBytes) -> {
+						return encryptedRsaKeyBytes;
+					}).map(encryptedRsaKeyBytes -> new String(encryptedRsaKeyBytes, StandardCharsets.UTF_8))
+					.flatMap(encrypedRsaKey -> {
+						ServerHttpResponse response = webFilterExchange.getExchange().getResponse();
 						SessionDataModel model = new SessionDataModel();
-						byte[] responseBody = null;
 						model.setRoute("login");
-						model.setKey(rsaKeyAndSessionTuple.getT1().toPublicJWK().toJSONString());
+						model.setKey(encrypedRsaKey);
+						byte[] responseBody = null;
 						try {
 							responseBody = new ObjectMapper().writeValueAsBytes(model);
 						} catch (JsonProcessingException e) {
-							e.printStackTrace();
+							return Mono.error(e);
 						}
 						DataBuffer data = response.bufferFactory().wrap(responseBody);
 						response.getHeaders().add("Content-Type", "application/json");
 						response.setStatusCode(HttpStatus.UNAUTHORIZED);
-						websessionStore.updateLastAccessTime(session).subscribeOn(Schedulers.parallel()).subscribe();
 						return response.writeWith(Mono.just(data));
 					});
 		});
 	}
-
 }

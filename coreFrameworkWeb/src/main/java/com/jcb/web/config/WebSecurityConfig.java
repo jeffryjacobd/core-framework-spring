@@ -2,6 +2,9 @@ package com.jcb.web.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
@@ -11,10 +14,14 @@ import org.springframework.security.web.server.authentication.AuthenticationWebF
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
+import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.server.WebFilter;
 
+import com.jcb.service.security.RSAEncryptionService;
+import com.jcb.web.filter.EncryptionWebFilter;
 import com.jcb.web.handler.LoginHandler;
 
+@EnableWebFlux
 @EnableWebFluxSecurity
 public class WebSecurityConfig {
 	@Autowired
@@ -26,6 +33,18 @@ public class WebSecurityConfig {
 	@Autowired
 	private LoginHandler loginHandler;
 
+	@Autowired
+	private RSAEncryptionService rsaService;
+
+	@Autowired
+	private ServerCodecConfigurer codecConfigurer;
+
+	@Bean
+	@Order(Ordered.HIGHEST_PRECEDENCE)
+	public WebFilter encryptionWebFilter() {
+		return new EncryptionWebFilter(rsaService, codecConfigurer);
+	}
+
 	@Bean
 	public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
 		// TO DO CSRF
@@ -34,8 +53,7 @@ public class WebSecurityConfig {
 		return http.build();
 	}
 
-	@Bean
-	public WebFilter authenticationWebFilter() {
+	private WebFilter authenticationWebFilter() {
 		AuthenticationWebFilter webFilter = new AuthenticationWebFilter(authenticationManager);
 		webFilter.setServerAuthenticationConverter(serverAuthenticationConverter);
 		webFilter.setAuthenticationFailureHandler(loginHandler::doLogoutHandler);

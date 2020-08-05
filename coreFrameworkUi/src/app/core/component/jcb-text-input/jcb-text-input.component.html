@@ -1,6 +1,7 @@
 <div class="jcb-text-input-container">
     <mat-form-field>
         <mat-label *ngIf="!!label">{{label}}</mat-label>
-        <input #ref matInput [type]="inputType" (blur)="update(ref.value)" (keyup.enter)="update(ref.value)">
+        <input #ref matInput [type]="inputType" (blur)="update(ref.value)" (keyup.enter)="update(ref.value)"
+            (change)='isChangeEventEnabled && update(ref.value)'>
     </mat-form-field>
 </div>

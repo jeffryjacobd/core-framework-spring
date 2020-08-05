@@ -8,11 +8,13 @@ import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 export class JcbTextInputComponent implements OnInit {
   @Input() label: String;
   @Input() inputType: InputType;
+  @Input() isChangeEventEnabled: boolean;
   @Output() valueEvent = new EventEmitter<String>();
   constructor() {
   }
   ngOnInit(): void {
-    (!this.inputType) && (this.inputType = InputType.Text)
+    (!this.inputType) && (this.inputType = InputType.Text);
+    (this.isChangeEventEnabled == undefined) && (this.isChangeEventEnabled = false)
   }
   update(value: String): void {
     this.valueEvent.emit(value);

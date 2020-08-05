@@ -13,12 +13,13 @@ import { tap } from 'rxjs/operators';
 import { StorageService, LOCAL_STORAGE } from 'ngx-webstorage-service';
 import { Router } from '@angular/router';
 import { SessionDataModel } from '../../auth/model/session-data-model';
+import { EncryptionService } from '../../encryption/service/encryption.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SessionInterceptor implements HttpInterceptor {
-  constructor(private sessionStorageService: SessionStorageService, @Inject(LOCAL_STORAGE) private storage: StorageService, private router: Router) { }
+  constructor(private sessionStorageService: SessionStorageService, @Inject(LOCAL_STORAGE) private storage: StorageService, private router: Router, private encryptionService: EncryptionService) { }
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     (this.sessionStorageService.getSession() != undefined) && (request = request.clone({ setHeaders: { [SESSION_TOKEN_KEY]: this.sessionStorageService.getSession() } }));
@@ -36,7 +37,8 @@ export class SessionInterceptor implements HttpInterceptor {
           this.storage.set(SESSION_KEY, authToken);
           if (event.status.valueOf() == 401) {
             const model: SessionDataModel = event.error;
-            this.sessionStorageService.setEncryptionKey(model.key);
+            this.sessionStorageService.setEncryptionKey(
+              this.encryptionService.decryptAesContentWithStringKey(model.key, this.sessionStorageService.getSession()));
             this.router.navigateByUrl(model.route, { skipLocationChange: true, replaceUrl: false });
           }
         }

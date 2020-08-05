@@ -22,13 +22,19 @@ module core.framework.dao {
 
 	requires transitive java.annotation;
 
+	requires transitive json.smart;
+
+	requires transitive nimbus.jose.jwt;
+
 	exports com.jcb.dao to core.framework.biz, core.framework;
 
 	exports com.jcb.handlers.cassandra.listener.schemachange;
 
 	exports com.jcb.handlers.spring.bean.dao;
 
-	exports com.jcb.entity to core.framework, core.framework.biz;
+	exports com.jcb.entity to core.framework, core.framework.biz, core.framework.web;
+
+	exports com.jcb.utility to core.framework.biz;
 
 	opens com.jcb.handlers.cassandra.helper to spring.beans, spring.core, spring.context;
 

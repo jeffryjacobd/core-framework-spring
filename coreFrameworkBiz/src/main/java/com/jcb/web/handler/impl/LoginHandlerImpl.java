@@ -63,17 +63,22 @@ public class LoginHandlerImpl implements LoginHandler {
 		}).flatMap(sessionModelPublicKeyTuple -> {
 			return this.aesKeyGenerator.getAESKey().map(secretKey -> {
 				return new String(Base64.getEncoder().encode(secretKey.getEncoded()), StandardCharsets.UTF_8);
-			}).map(secretKeyBase64 -> {
-				String jsonModel = "";
-				SessionDataModel model = sessionModelPublicKeyTuple.getT1();
-				model.setKey(secretKeyBase64);
-				try {
-					jsonModel = new ObjectMapper().writeValueAsString(model);
-				} catch (JsonProcessingException e) {
-					e.printStackTrace();
-					Mono.error(e);
-				}
-				return jsonModel;
+			}).flatMap(secretKeyBase64 -> {
+				return request.session().doOnNext(session -> {
+					session.getAttributes().put(WebSession.ENCRYPTION_KEY, secretKeyBase64);
+					session.getAttributes().put(WebSession.SAVE_ON_UPDATE, true);
+				}).flatMap(session -> {
+					String jsonModel = "";
+					SessionDataModel model = sessionModelPublicKeyTuple.getT1();
+					model.setKey(secretKeyBase64);
+					try {
+						jsonModel = new ObjectMapper().writeValueAsString(model);
+					} catch (JsonProcessingException e) {
+						e.printStackTrace();
+						return Mono.error(e);
+					}
+					return Mono.just(jsonModel);
+				});
 			}).flatMap(jsonModel -> {
 				return this.rsaEncryptionService.encrypt(jsonModel.getBytes(StandardCharsets.UTF_8),
 						sessionModelPublicKeyTuple.getT2());
@@ -105,7 +110,7 @@ public class LoginHandlerImpl implements LoginHandler {
 		return webSession.doOnNext(session -> {
 			session.getAttributes().remove(WebSession.ENCRYPTION_KEY);
 			session.getAttributes().put(WebSession.USER_NAME_KEY, userDetail.getUsername());
-			session.getAttributes().put(WebSession.SAVE_ON_UPDATE, true);
+			session.getAttributes().put(WebSession.SAVE_ON_UPDATE, false);
 		}).flatMap(session -> ServerResponse.ok().build());
 	}
 

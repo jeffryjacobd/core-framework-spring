@@ -39,7 +39,7 @@ export class EncryptionService implements OnInit, OnDestroy {
 
   private createRsaKeyPair(): PromiseLike<CryptoKeyPair> {
     return crypto.subtle.generateKey({
-      name: 'RSA-OAEP', modulusLength: 4096,
+      name: 'RSA-OAEP', modulusLength: 2048,
       publicExponent: new Uint8Array([1, 0, 1]),
       hash: HASH
     }, true, [ENCRYPT, DECRYPT]);

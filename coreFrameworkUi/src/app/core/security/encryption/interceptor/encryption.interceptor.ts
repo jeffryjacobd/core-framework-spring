@@ -35,7 +35,7 @@ export class EncryptionInterceptor implements HttpInterceptor {
 
   private handshakeFilter(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     if (this.sessionStorageService.getSession() == undefined) {
-      return next.handle(request);
+      return next.handle(request.clone({ responseType: 'text' }));
     }
     return this.encrptionService.getRsaKeyPair().pipe(mergeMap(keyPair => {
       return this.encrptionService.convertRsaPublicKeyToBase64(keyPair.publicKey).pipe(mergeMap(base64PublicKey => {

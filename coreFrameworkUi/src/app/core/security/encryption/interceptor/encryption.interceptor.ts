@@ -7,22 +7,19 @@ import {
   HttpResponse,
   HttpErrorResponse
 } from '@angular/common/http';
-import { Observable, merge } from 'rxjs';
-import * as forge from 'node-forge';
+import { Observable, merge, of } from 'rxjs';
 import { EncryptionService } from '../service/encryption.service'
 import { mergeMap, map, tap } from 'rxjs/operators';
 import { SessionDataModel } from '../../auth/model/session-data-model';
 import { SessionStorageService } from '../../session/service/session-storage.service';
-import { Router } from '@angular/router';
-import { UserModel } from '../../auth/model/user-model';
 
 @Injectable()
 export class EncryptionInterceptor implements HttpInterceptor {
 
-  constructor(private encrptionService: EncryptionService, private sessionStorageService: SessionStorageService, private router: Router) { }
+  constructor(private encrptionService: EncryptionService, private sessionStorageService: SessionStorageService) { }
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    if (request.url.endsWith('handshake')) {
+    if (request.url.endsWith('getSession')) {
       return this.handshakeFilter(request, next);
     } else if (request.url.endsWith('login')) {
       return this.loginFilter(request, next);
@@ -31,30 +28,35 @@ export class EncryptionInterceptor implements HttpInterceptor {
     }
   }
   private loginFilter(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    return this.encrptionService.encryptWithRsaPublicKeyString(request.body, this.sessionStorageService.getEncryptionKey()).pipe(mergeMap(encryptedContents => {
+    return this.encrptionService.encryptWithRsaPublicKeyString(JSON.stringify(request.body), this.sessionStorageService.getEncryptionKey()).pipe(mergeMap(encryptedContents => {
       return next.handle(request.clone({ body: encryptedContents }));
     }))
   }
 
   private handshakeFilter(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    if (this.sessionStorageService.getSession() == undefined) {
+      return next.handle(request);
+    }
     return this.encrptionService.getRsaKeyPair().pipe(mergeMap(keyPair => {
-      request = request.clone({ body: keyPair.publicKey });
-      return next.handle(request).pipe(map(response => {
-        if (response instanceof HttpResponse) {
-          this.encrptionService.stopRsaKeyPairCreation();
-          const deCrytedString = this.encrptionService.decryptRsaContent(response.body, keyPair.privateKey);
-          const model: SessionDataModel = JSON.parse(deCrytedString);
-          this.sessionStorageService.setEncryptionKey(model.key);
-          this.sessionStorageService.setDecryptionKey(model.key);
-          response.clone({ body: undefined });
-        }
-        return response;
-      }), tap(undefined, errorResponse => {
-        if ((errorResponse instanceof HttpErrorResponse) && (errorResponse.status != 200)) {
-          this.encrptionService.startRsaKeyPairCreation();
-          this.sessionStorageService.clearSession();
-          this.router.navigateByUrl('login', { skipLocationChange: true, replaceUrl: false })
-        }
+      return this.encrptionService.convertRsaPublicKeyToBase64(keyPair.publicKey).pipe(mergeMap(base64PublicKey => {
+        return this.encrptionService.encryptAesContentWithStringKey(base64PublicKey, this.sessionStorageService.getSession()).pipe(map(encryptedRsa => {
+          return request.clone({ body: encryptedRsa, responseType: 'text' });
+        }), mergeMap(changedRequest => {
+          return next.handle(changedRequest).pipe(mergeMap(response => {
+            if (response instanceof HttpResponse) {
+              this.encrptionService.stopRsaKeyPairCreation();
+              return this.encrptionService.decryptRsaContent(response.body, keyPair.privateKey)
+                .pipe(map(decrytedString => {
+                  const model: SessionDataModel = JSON.parse(decrytedString);
+                  model.key = Buffer.from(model.key, 'base64').toString();
+                  return model;
+                }), map(model => {
+                  return response.clone({ body: model });
+                }));
+            }
+            return of(response);
+          }));
+        }));
       }));
     }));
   }

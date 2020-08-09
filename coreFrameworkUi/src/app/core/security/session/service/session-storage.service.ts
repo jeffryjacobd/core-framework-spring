@@ -1,5 +1,4 @@
-import { Injectable, Inject } from '@angular/core';
-import * as forge from 'node-forge';
+import { Injectable } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'

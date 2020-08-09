@@ -24,8 +24,6 @@ module core.framework.dao {
 
 	requires transitive json.smart;
 
-	requires transitive nimbus.jose.jwt;
-
 	exports com.jcb.dao to core.framework.biz, core.framework;
 
 	exports com.jcb.handlers.cassandra.listener.schemachange;

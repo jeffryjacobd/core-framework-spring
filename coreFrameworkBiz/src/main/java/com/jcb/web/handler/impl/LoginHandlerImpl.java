@@ -5,7 +5,9 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Base64;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.server.WebFilterExchange;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
@@ -24,16 +25,22 @@ import com.jcb.entity.SessionDataModel;
 import com.jcb.entity.UserDetails;
 import com.jcb.entity.UserModel;
 import com.jcb.entity.WebSession;
+import com.jcb.service.crypt.keygeneration.AESKeyGeneratorService;
 import com.jcb.service.crypt.keygeneration.RSAKeyGeneratorService;
 import com.jcb.service.security.AESEncryptionService;
+import com.jcb.service.security.RSAEncryptionService;
 import com.jcb.service.security.UserAuthenticationService;
 import com.jcb.web.handler.LoginHandler;
 
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuples;
 
 public class LoginHandlerImpl implements LoginHandler {
 	@Autowired
 	private RSAKeyGeneratorService rsaKeyGenerator;
+
+	@Autowired
+	private AESKeyGeneratorService aesKeyGenerator;
 
 	@Autowired
 	private UserAuthenticationService userAuthenticationService;
@@ -41,13 +48,41 @@ public class LoginHandlerImpl implements LoginHandler {
 	@Autowired
 	private AESEncryptionService aesEncryptionService;
 
+	@Autowired
+	private RSAEncryptionService rsaEncryptionService;
+
 	@Override
 	public Mono<ServerResponse> getSession(ServerRequest request) {
-		SessionDataModel model = new SessionDataModel();
-		model.setKey("");
-		// TO Do update from last routed path sessionDto
-		model.setRoute("");
-		return ServerResponse.ok().body(BodyInserters.fromValue(model));
+		return Mono.defer(() -> request.bodyToMono(SessionDataModel.class)).map(sessionModel -> {
+			sessionModel.setRoute("home");
+			return sessionModel;
+		}).zipWhen(sessionModel -> {
+			return this.rsaKeyGenerator.generatePublicKeyFromPem(sessionModel.getKey());
+		}, (sessionModelCombinator, publicKey) -> {
+			return Tuples.of(sessionModelCombinator, publicKey);
+		}).flatMap(sessionModelPublicKeyTuple -> {
+			return this.aesKeyGenerator.getAESKey().map(secretKey -> {
+				return new String(Base64.getEncoder().encode(secretKey.getEncoded()), StandardCharsets.UTF_8);
+			}).map(secretKeyBase64 -> {
+				String jsonModel = "";
+				SessionDataModel model = sessionModelPublicKeyTuple.getT1();
+				model.setKey(secretKeyBase64);
+				try {
+					jsonModel = new ObjectMapper().writeValueAsString(model);
+				} catch (JsonProcessingException e) {
+					e.printStackTrace();
+					Mono.error(e);
+				}
+				return jsonModel;
+			}).flatMap(jsonModel -> {
+				return this.rsaEncryptionService.encrypt(jsonModel.getBytes(StandardCharsets.UTF_8),
+						sessionModelPublicKeyTuple.getT2());
+			}).map(encryptedResult -> {
+				return Hex.encode(encryptedResult);
+			}).flatMap(encryptedString -> {
+				return ServerResponse.ok().bodyValue(new String(encryptedString, StandardCharsets.UTF_8));
+			});
+		});
 	}
 
 	@Override
@@ -66,7 +101,7 @@ public class LoginHandlerImpl implements LoginHandler {
 
 	private Mono<ServerResponse> saveLoginSession(ServerRequest request,
 			org.springframework.security.core.userdetails.UserDetails userDetail) {
-		Mono<org.springframework.web.server.WebSession> webSession = request.exchange().getSession();
+		Mono<org.springframework.web.server.WebSession> webSession = request.session();
 		return webSession.doOnNext(session -> {
 			session.getAttributes().remove(WebSession.ENCRYPTION_KEY);
 			session.getAttributes().put(WebSession.USER_NAME_KEY, userDetail.getUsername());
@@ -76,7 +111,7 @@ public class LoginHandlerImpl implements LoginHandler {
 
 	@Override
 	public Mono<ServerResponse> logout(ServerRequest request) {
-		Mono<org.springframework.web.server.WebSession> webSession = request.exchange().getSession();
+		Mono<org.springframework.web.server.WebSession> webSession = request.session();
 		return webSession.doOnNext(session -> {
 			session.getAttributes().put(WebSession.USER_NAME_KEY, "");
 			session.getAttributes().put(WebSession.SAVE_ON_UPDATE, true);

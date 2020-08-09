@@ -17,6 +17,7 @@ import org.springframework.security.web.server.util.matcher.ServerWebExchangeMat
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.server.WebFilter;
 
+import com.jcb.service.security.AESEncryptionService;
 import com.jcb.service.security.RSAEncryptionService;
 import com.jcb.web.filter.EncryptionWebFilter;
 import com.jcb.web.handler.LoginHandler;
@@ -37,12 +38,15 @@ public class WebSecurityConfig {
 	private RSAEncryptionService rsaService;
 
 	@Autowired
+	private AESEncryptionService aesService;
+
+	@Autowired
 	private ServerCodecConfigurer codecConfigurer;
 
 	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
 	public WebFilter encryptionWebFilter() {
-		return new EncryptionWebFilter(rsaService, codecConfigurer);
+		return new EncryptionWebFilter(rsaService, aesService, codecConfigurer);
 	}
 
 	@Bean

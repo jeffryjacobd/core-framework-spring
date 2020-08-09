@@ -6,8 +6,6 @@ module core.framework.biz {
 
 	requires transitive spring.security.web;
 
-	requires transitive nimbus.jose.jwt;
-
 	requires org.bouncycastle.provider;
 
 	requires transitive org.apache.commons.lang3;

@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import com.jcb.service.security.AESEncryptionService;
 import com.jcb.service.security.RSAEncryptionService;
 import com.jcb.web.filter.EncryptionWebFilter;
 
@@ -21,12 +22,15 @@ public class FilterInjectAspect {
 	private RSAEncryptionService rsaService;
 
 	@Autowired
+	private AESEncryptionService aesService;
+
+	@Autowired
 	private ServerCodecConfigurer codecConfigurer;
 
 	private EncryptionWebFilter encryptionFilter;
 
 	private void setEncryptionWebFilter() {
-		this.encryptionFilter = new EncryptionWebFilter(rsaService, codecConfigurer);
+		this.encryptionFilter = new EncryptionWebFilter(rsaService, aesService, codecConfigurer);
 	}
 
 	@Around("execution(public org.springframework.web.reactive.function.server.RouterFunction<org.springframework.web.reactive.function.server.ServerResponse> com.jcb.web.router.*.*(..))")

@@ -25,7 +25,7 @@ public class BizMainConfig {
 	}
 
 	@Bean
-	public AESKeyGeneratorService aesKeyGenerator() {
+	public AESKeyGeneratorService aesKeyGenerator() throws NoSuchAlgorithmException {
 		return new AESKeyGeneratorServiceImpl();
 	}
 

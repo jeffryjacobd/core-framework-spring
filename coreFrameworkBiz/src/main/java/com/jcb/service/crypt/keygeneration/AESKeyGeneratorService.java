@@ -1,18 +1,17 @@
 package com.jcb.service.crypt.keygeneration;
 
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.jwk.OctetSequenceKey;
+import javax.crypto.SecretKey;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface AESKeyGeneratorService {
 
-	OctetSequenceKey generateKeyPair() throws JOSEException;
+	SecretKey generateKeyPair();
 
-	Flux<OctetSequenceKey> getAESKey(Integer count);
+	Flux<SecretKey> getAESKey(Integer count);
 
-	default Mono<OctetSequenceKey> getAESKey() {
+	default Mono<SecretKey> getAESKey() {
 		return getAESKey(1).next();
 	}
 

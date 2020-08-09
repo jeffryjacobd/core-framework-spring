@@ -2,9 +2,10 @@ package com.jcb.service.security.impl;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.MGF1ParameterSpec;
 
 import javax.crypto.BadPaddingException;
@@ -33,10 +34,22 @@ public class RSAEncryptionServiceImpl implements RSAEncryptionService {
 	}
 
 	@Override
-	public synchronized Mono<byte[]> decrypt(byte[] cipherText, KeyPair secretKey) {
+	public synchronized Mono<byte[]> decrypt(byte[] cipherText, PrivateKey secretKey) {
 		try {
-			cipher.init(Cipher.DECRYPT_MODE, secretKey.getPrivate(), oaepParameterSpec);
+			cipher.init(Cipher.DECRYPT_MODE, secretKey, oaepParameterSpec);
 			return Mono.just(cipher.doFinal(cipherText));
+		} catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException
+				| InvalidAlgorithmParameterException e) {
+			e.printStackTrace();
+			return Mono.error(e);
+		}
+	}
+
+	@Override
+	public synchronized Mono<byte[]> encrypt(byte[] plainText, PublicKey secretKey) {
+		try {
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey, oaepParameterSpec);
+			return Mono.just(cipher.doFinal(plainText));
 		} catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException
 				| InvalidAlgorithmParameterException e) {
 			e.printStackTrace();

@@ -5,7 +5,8 @@ import { SessionDataModel } from '../model/session-data-model';
 import { SessionStorageService } from '../../session/service/session-storage.service';
 import { LOCAL_STORAGE, StorageService } from 'ngx-webstorage-service';
 import { Observable, of, CompletionObserver } from 'rxjs';
-import { map, tap, flatMap, mergeMap } from 'rxjs/operators';
+import { map, tap, mergeMap } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 const SESSION_KEY = 'sessionId';
 
@@ -20,7 +21,7 @@ export class AuthService {
     }
   };
 
-  constructor(private http: HttpClient, private sessionStorageService: SessionStorageService, @Inject(LOCAL_STORAGE) private storage: StorageService) { }
+  constructor(private http: HttpClient, private sessionStorageService: SessionStorageService, @Inject(LOCAL_STORAGE) private storage: StorageService, private router: Router) { }
 
   isAuthenticated(): Observable<string> {
     if (this.sessionStorageService.getLoginTime() != undefined) {
@@ -31,7 +32,13 @@ export class AuthService {
 
   login(userModel: UserModel) {
     return this.http.post<any>('login', userModel).pipe(tap(this.loginCompleteObserver), mergeMap((loginResponse) => {
-      return this.http.post<any>('handshake', {});
+      return this.http.post<SessionDataModel>('getSession', {}).pipe(tap(
+        sessionData => {
+          !!sessionData.key && this.sessionStorageService.setEncryptionKey(sessionData.key);
+          this.sessionStorageService.setLoginTime();
+          this.router.navigateByUrl(sessionData.route, { skipLocationChange: true, replaceUrl: false });
+        }
+      ));
     }));
   }
 

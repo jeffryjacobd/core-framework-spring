@@ -1,9 +1,14 @@
 package com.jcb.service.crypt.keygeneration.impl;
 
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,13 +29,15 @@ import reactor.core.scheduler.Schedulers;
 @Component
 public class RSAKeyGeneratorServiceImpl implements RSAKeyGeneratorService {
 	private static final Logger LOG = (Logger) LoggerFactory.getLogger(RSAKeyGeneratorServiceImpl.class);
-	private static KeyPairGenerator keyPairGenerator;
+	private final KeyPairGenerator keyPairGenerator;
+	private final KeyFactory kf;
 	private static final Integer MAXIMUM_COUNT = 100;
 
 	public static final Map<Integer, KeyPair> cacheMap = new ConcurrentHashMap<>(100);
 
 	public RSAKeyGeneratorServiceImpl() throws NoSuchAlgorithmException, NoSuchProviderException {
-		keyPairGenerator = KeyPairGenerator.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
+		this.keyPairGenerator = KeyPairGenerator.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
+		this.kf = KeyFactory.getInstance("RSA");
 	}
 
 	@Override
@@ -62,5 +69,18 @@ public class RSAKeyGeneratorServiceImpl implements RSAKeyGeneratorService {
 			}).subscribe();
 			return keyToReturn;
 		}).sequential();
+	}
+
+	@Override
+	public Mono<PublicKey> generatePublicKeyFromPem(String base64Pem) {
+		X509EncodedKeySpec keySpecX509 = new X509EncodedKeySpec(Base64.getDecoder().decode(base64Pem));
+		PublicKey pubKey = null;
+		try {
+			pubKey = kf.generatePublic(keySpecX509);
+		} catch (InvalidKeySpecException e) {
+			e.printStackTrace();
+			return Mono.error(e);
+		}
+		return Mono.just(pubKey);
 	}
 }

@@ -16,8 +16,8 @@
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>com.nimbusds</groupId>
-			<artifactId>nimbus-jose-jwt</artifactId>
+			<groupId>net.minidev</groupId>
+			<artifactId>json-smart</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.datastax.oss</groupId>

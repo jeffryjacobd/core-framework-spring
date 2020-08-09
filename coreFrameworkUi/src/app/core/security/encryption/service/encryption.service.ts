@@ -1,7 +1,5 @@
 import { Injectable, OnDestroy, OnInit } from '@angular/core';
-import * as forge from 'node-forge';
-import * as CryptoJS from 'crypto-js';
-import { bindCallback, Observable, Subject, of, from } from 'rxjs';
+import { Observable, Subject, of, from, zip } from 'rxjs';
 import { map, tap, takeUntil, mergeMap } from 'rxjs/operators';
 
 @Injectable({
@@ -9,8 +7,9 @@ import { map, tap, takeUntil, mergeMap } from 'rxjs/operators';
 })
 export class EncryptionService implements OnInit, OnDestroy {
 
+
   private destroy$: Subject<boolean> = new Subject<boolean>();
-  private _initialKeyPair: forge.pki.KeyPair;
+  private _initialKeyPair: CryptoKeyPair;
   private _rsaCreationInterval: NodeJS.Timeout;
 
   constructor() { }
@@ -28,7 +27,7 @@ export class EncryptionService implements OnInit, OnDestroy {
 
   startRsaKeyPairCreation() {
     this._rsaCreationInterval = setInterval(() => {
-      return this.createRsaKeyPair().pipe(tap(keyPair => {
+      return from(this.createRsaKeyPair()).pipe(tap(keyPair => {
         this._initialKeyPair = keyPair;
       }), takeUntil(this.destroy$)).subscribe();
     }, 20000);
@@ -38,52 +37,72 @@ export class EncryptionService implements OnInit, OnDestroy {
     clearTimeout(this._rsaCreationInterval);
   }
 
-  private createRsaKeyPair(): Observable<forge.pki.KeyPair> {
-    const keyPairObservable = bindCallback(forge.pki.rsa.generateKeyPair);
-    return keyPairObservable({ bits: 2048 }).pipe(map((result: [Error, forge.pki.KeyPair]) => {
-      if (!!result[0]) {
-        console.error(result[0]);
-        throw result[0];
-      }
-      return result[1];
-    }), takeUntil(this.destroy$));
+  private createRsaKeyPair(): PromiseLike<CryptoKeyPair> {
+    return crypto.subtle.generateKey({
+      name: 'RSA-OAEP', modulusLength: 4096,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: HASH
+    }, true, [ENCRYPT, DECRYPT]);
   }
 
-  getRsaKeyPair(): Observable<forge.pki.KeyPair> {
+  getRsaKeyPair(): Observable<CryptoKeyPair> {
     if (this._initialKeyPair == undefined) {
-      return this.createRsaKeyPair();
+      return from(this.createRsaKeyPair());
     } else {
       return of(this._initialKeyPair);
     }
   }
 
-  decryptAesContentWithStringKey(body: any, secretKey: string, isHashedPassword: boolean = true): string {
-    if (isHashedPassword) {
-      const encrypted = CryptoJS.enc.Hex.parse(Buffer.from(body, 'base64').toString('hex'));
-      const salt = CryptoJS.lib.WordArray.create(encrypted.words.slice(0, SALT_LENGTH / 4));
-      const key = CryptoJS.PBKDF2(secretKey, salt, { keySize: 256 / 32, iterations: HASH_ITERATIONS, hasher: CryptoJS.algo.SHA256 });
-      const decrypted = CryptoJS.AES.decrypt(CryptoJS.lib.WordArray.create(encrypted.words.slice(SALT_LENGTH / 4)).toString()
-        , key, {
-        format: CryptoJS.format.Hex,
-        keySize: 32,
-        mode: CryptoJS.mode.ECB,
-        padding: CryptoJS.pad.Pkcs7
-      });
-      return decrypted.toString(CryptoJS.enc.Utf8);
-    }
-    return '';
+  convertRsaPublicKeyToBase64(publicKey: CryptoKey): Observable<string> {
+    return from(crypto.subtle.exportKey("spki", publicKey)).pipe(map(exportedArrayBuffer => {
+      return this.ab2str(exportedArrayBuffer);
+    }), map(exportedString => {
+      return btoa(exportedString);
+    }));
   }
 
-  encryptWithRsaPublicKeyString(body: any, publicKey: string): Observable<string> {
-    const pemHeader = "-----BEGIN RSA PUBLIC KEY-----";
-    const pemFooter = "-----END RSA PUBLIC KEY-----";
+  decryptAesContentWithStringKey(body: any, secretKey: string): Observable<string> {
+    return from(crypto.subtle.importKey("raw", new Int8Array(new TextEncoder().encode(secretKey)), PBKDF2, false, ["deriveKey"])).pipe(mergeMap(rawKey => {
+      return from(crypto.subtle.deriveKey({
+        name: PBKDF2, salt: new Int8Array(Buffer.from(body, BASE64).slice(0, SALT_LENGTH)),
+        iterations: HASH_ITERATIONS, hash: HASH
+      }, rawKey, { name: AES_GCM, length: KEY_LENGTH }, true, [DECRYPT]))
+    }), mergeMap(derivedKey => {
+      return from(crypto.subtle.decrypt({
+        name: AES_GCM, iv: new Int8Array(Buffer.from(body, BASE64).slice(SALT_LENGTH, SALT_LENGTH + IV_LENGTH)),
+        length: KEY_LENGTH,
+        tagLength: KEY_LENGTH / 2
+      }, derivedKey, new Int8Array(Buffer.from(body, BASE64).slice(SALT_LENGTH + IV_LENGTH))));
+    }), map(decryptedArray => {
+      return new TextDecoder().decode(decryptedArray);
+    }))
+  }
+
+
+  encryptAesContentWithStringKey(body: string, secretKey: string): Observable<string> {
+    const salt = crypto.getRandomValues(new Int8Array(SALT_LENGTH));
+    const iv = crypto.getRandomValues(new Int8Array(IV_LENGTH));
+    return from(crypto.subtle.importKey("raw", new Int8Array(new TextEncoder().encode(secretKey)), PBKDF2, false, ["deriveKey"])).pipe(mergeMap(rawKey => {
+      return from(crypto.subtle.deriveKey({
+        name: PBKDF2, salt: salt,
+        iterations: HASH_ITERATIONS, hash: HASH
+      }, rawKey, { name: AES_GCM, length: KEY_LENGTH }, true, [ENCRYPT]))
+    }), mergeMap(derivedKey => {
+      return from(crypto.subtle.encrypt({ name: AES_GCM, iv: iv, length: KEY_LENGTH, tagLength: KEY_LENGTH / 2 },
+        derivedKey, new Int8Array(new TextEncoder().encode(body))));
+    }), map(encryptedContent => {
+      return Buffer.concat([Buffer.from(salt), Buffer.from(iv), Buffer.from(encryptedContent)]).toString(BASE64);
+    }));
+  }
+
+  encryptWithRsaPublicKeyString(body: string, publicKey: string): Observable<string> {
     const pemContents = publicKey.substring(pemHeader.length + 1, publicKey.length - pemFooter.length - 1);
     const binaryDerString = atob(pemContents);
     const binaryDer = this.str2ab(binaryDerString);
-    return from(crypto.subtle.importKey('spki', binaryDer, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"])).pipe(mergeMap(encryptionKey => {
-      return from(crypto.subtle.encrypt({ name: "RSA-OAEP" }, encryptionKey, new TextEncoder().encode(JSON.stringify(body))));
+    return from(crypto.subtle.importKey('spki', binaryDer, { name: "RSA-OAEP", hash: HASH }, true, [ENCRYPT])).pipe(mergeMap(encryptionKey => {
+      return from(crypto.subtle.encrypt({ name: "RSA-OAEP" }, encryptionKey, new TextEncoder().encode(body)));
     }), map(arrayBuffer => {
-      return Buffer.from(arrayBuffer).toString('hex');
+      return Buffer.from(arrayBuffer).toString(HEX);
     }));
   }
 
@@ -96,11 +115,27 @@ export class EncryptionService implements OnInit, OnDestroy {
     return buf;
   }
 
-  decryptRsaContent(body: any, privateKey: forge.pki.PrivateKey): string {
-    const rsaPrivateKey: forge.pki.rsa.PrivateKey = forge.pki.privateKeyFromPem(forge.pki.privateKeyToPem(privateKey));
-    return rsaPrivateKey.decrypt(body);
+  private ab2str(arrayBuffer: ArrayBuffer) {
+    return String.fromCharCode.apply(null, new Uint8Array(arrayBuffer));
+  }
+
+  decryptRsaContent(body: string, privateKey: CryptoKeyPair["privateKey"]): Observable<string> {
+    return from(crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, new Int8Array(Buffer.from(body, 'hex')))).pipe(map(arrayBuffer => {
+      return Buffer.from(arrayBuffer).toString('utf-8');
+    }));
   }
 
 }
 const SALT_LENGTH = 16;
+const IV_LENGTH = 16;
 const HASH_ITERATIONS = 10000;
+const HASH = 'SHA-256';
+const KEY_LENGTH = 256;
+const HEX = 'hex';
+const BASE64 = 'base64';
+const AES_GCM = 'AES-GCM';
+const PBKDF2 = 'PBKDF2';
+const ENCRYPT = 'encrypt';
+const DECRYPT = 'decrypt';
+const pemHeader = "-----BEGIN RSA PUBLIC KEY-----";
+const pemFooter = "-----END RSA PUBLIC KEY-----";

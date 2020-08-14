@@ -45,7 +45,7 @@ public class EncryptionWebFilter implements WebFilter, HandlerFilterFunction<Ser
 	@Override
 	public Mono<ServerResponse> filter(ServerRequest request, HandlerFunction<ServerResponse> next) {
 		ServerWebExchange exchange = request.exchange();
-		return Mono.defer(() -> ServerWebExchangeMatchers.pathMatchers("/", "/*.js", "/*.js.map", "/*.ico")
+		return Mono.defer(() -> ServerWebExchangeMatchers.pathMatchers("/", "/*.css", "/*.js", "/*.js.map", "/*.ico")
 				.matches(exchange).flatMap(matcher -> {
 					if (!matcher.isMatch()) {
 						if (request.path().endsWith("/login")) {

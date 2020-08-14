@@ -39,7 +39,14 @@ export class LoginComponent implements OnInit {
     this.buttonIcon = ButtonIcon.loading;
     this.disableLoginButton = true;
     const userModel: UserModel = { user: this.id || '', password: this.password || '', rememberMe: this.rememberMe || false };
-    this.authservice.login(userModel).subscribe();
+    this.authservice.login(userModel).subscribe({
+      error: (error) => {
+        this.buttonIcon = undefined;
+        this.disableLoginButton = false;
+        this.isIdChangeEventEnabled = true;
+        this.isPwdChangeEventEnabled = true;
+      }
+    });
   }
 
   ngOnInit(): void {

@@ -1,13 +1,20 @@
 package com.jcb.web.config;
 
+import java.util.Arrays;
+
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.codec.ServerCodecConfigurer;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.BodyInserter;
+import org.springframework.web.reactive.function.server.EntityResponse;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import com.jcb.service.security.AESEncryptionService;
@@ -40,6 +47,21 @@ public class FilterInjectAspect {
 			setEncryptionWebFilter();
 		}
 		RouterFunction<ServerResponse> routerToBeInjected = (RouterFunction<ServerResponse>) pjp.proceed();
-		return RouterFunctions.route().filter(encryptionFilter::filter).add(routerToBeInjected).build();
+		return RouterFunctions.route().filter(encryptionFilter::filter).add(routerToBeInjected)
+				.after((request, response) -> {
+					return addRequiredContentType(request, response);
+				}).build();
+	}
+
+	@SuppressWarnings("unchecked")
+	private ServerResponse addRequiredContentType(ServerRequest request, ServerResponse response) {
+		if (request.path().endsWith(".css")) {
+			BodyInserter<?, ? super ServerHttpResponse> inserter = ((EntityResponse<ClassPathResource>) response)
+					.inserter();
+			response = ServerResponse.from(response).headers(responseHeaders -> {
+				responseHeaders.put("content-type", Arrays.asList("text/css"));
+			}).body(inserter).block();
+		}
+		return response;
 	}
 }

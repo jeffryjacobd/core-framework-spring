@@ -11,14 +11,14 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 @Configuration
 public class StaticFilesRouter {
 
-    @Bean
-    public RouterFunction<ServerResponse> ngRouter() {
-	return RouterFunctions
-		.route(RequestPredicates.path(""),
-			request -> ServerResponse.ok()
-				.bodyValue(new ClassPathResource("/static/core-framework-ui/index.html")))
-		.and(RouterFunctions.resources("/core-framework-ui/**",
-			new ClassPathResource("static/core-framework-ui/")));
-    }
+	@Bean
+	public RouterFunction<ServerResponse> ngRouter() {
+		return RouterFunctions
+				.route(RequestPredicates.path(""),
+						request -> ServerResponse.ok()
+								.bodyValue(new ClassPathResource("/static/core-framework-ui/index.html")))
+				.and(RouterFunctions.resources("/core-framework-ui/**",
+						new ClassPathResource("/static/core-framework-ui/")));
+	}
 
 }

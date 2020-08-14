@@ -62,7 +62,7 @@ public class WebSecurityConfig {
 		webFilter.setServerAuthenticationConverter(serverAuthenticationConverter);
 		webFilter.setAuthenticationFailureHandler(loginHandler::doLogoutHandler);
 		webFilter.setRequiresAuthenticationMatcher(new NegatedServerWebExchangeMatcher(
-				ServerWebExchangeMatchers.pathMatchers("/", "/*.js", "/*.js.map", "/*.ico", "/login")));
+				ServerWebExchangeMatchers.pathMatchers("/", "/*.css", "/*.js", "/*.js.map", "/*.ico", "/login")));
 		return webFilter;
 	}
 }

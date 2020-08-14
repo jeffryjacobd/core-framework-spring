@@ -13,6 +13,7 @@ import org.bouncycastle.util.io.pem.PemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.server.WebFilterExchange;
@@ -33,6 +34,7 @@ import com.jcb.service.security.UserAuthenticationService;
 import com.jcb.web.handler.LoginHandler;
 
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 public class LoginHandlerImpl implements LoginHandler {
@@ -100,7 +102,24 @@ public class LoginHandlerImpl implements LoginHandler {
 			});
 		}).flatMap(userDetail -> {
 			return saveLoginSession(request, userDetail);
-		}).switchIfEmpty(Mono.defer(() -> ServerResponse.status(HttpStatus.UNAUTHORIZED).build())));
+		}).switchIfEmpty(Mono.defer(() -> {
+			return this.rsaKeyGenerator.getRSAKey().zipWith(request.session()).flatMap(keypairSessionTuple -> {
+				return this.encryptRsaPublicKeyWithSessionId(keypairSessionTuple);
+			}).map(encryptedRsaKeyBytes -> new String(encryptedRsaKeyBytes, StandardCharsets.UTF_8))
+					.flatMap(encryptedRsaKey -> {
+						SessionDataModel model = new SessionDataModel();
+						model.setRoute("login");
+						model.setKey(encryptedRsaKey);
+						String responseText = "";
+						try {
+							responseText = new ObjectMapper().writeValueAsString(model);
+						} catch (JsonProcessingException e) {
+							return Mono.error(e);
+						}
+						return ServerResponse.status(HttpStatus.UNAUTHORIZED).contentType(MediaType.TEXT_PLAIN)
+								.bodyValue(responseText);
+					});
+		})));
 
 	}
 
@@ -135,24 +154,8 @@ public class LoginHandlerImpl implements LoginHandler {
 						response.getHeaders().clearContentHeaders();
 						response.setStatusCode(HttpStatus.UNAUTHORIZED);
 						return Mono.empty();
-					})).zipWhen(nonEmptyPublicKeySession -> {
-						KeyPair rsaKey = nonEmptyPublicKeySession.getT1();
-						org.springframework.web.server.WebSession session = nonEmptyPublicKeySession.getT2();
-						session.getAttributes().put(WebSession.ENCRYPTION_KEY, rsaKey);
-						RSAPublicKey publicKey = (RSAPublicKey) rsaKey.getPublic();
-						StringWriter writer = new StringWriter();
-						PemWriter pemWriter = new PemWriter(writer);
-						try {
-							pemWriter.writeObject(new PemObject("RSA PUBLIC KEY", publicKey.getEncoded()));
-							pemWriter.flush();
-						} catch (IOException e) {
-							e.printStackTrace();
-							return Mono.error(e);
-						}
-						return this.aesEncryptionService.encrypt(writer.toString().getBytes(StandardCharsets.UTF_8),
-								session.getId().getBytes(StandardCharsets.UTF_8), true);
-					}, (tuple, encryptedRsaKeyBytes) -> {
-						return encryptedRsaKeyBytes;
+					})).flatMap(nonEmptyPublicKeySession -> {
+						return encryptRsaPublicKeyWithSessionId(nonEmptyPublicKeySession);
 					}).map(encryptedRsaKeyBytes -> new String(encryptedRsaKeyBytes, StandardCharsets.UTF_8))
 					.flatMap(encrypedRsaKey -> {
 						ServerHttpResponse response = webFilterExchange.getExchange().getResponse();
@@ -171,5 +174,24 @@ public class LoginHandlerImpl implements LoginHandler {
 						return response.writeWith(Mono.just(data));
 					});
 		});
+	}
+
+	private Mono<byte[]> encryptRsaPublicKeyWithSessionId(
+			Tuple2<KeyPair, org.springframework.web.server.WebSession> nonEmptyPublicKeySession) {
+		KeyPair rsaKey = nonEmptyPublicKeySession.getT1();
+		org.springframework.web.server.WebSession session = nonEmptyPublicKeySession.getT2();
+		session.getAttributes().put(WebSession.ENCRYPTION_KEY, rsaKey);
+		RSAPublicKey publicKey = (RSAPublicKey) rsaKey.getPublic();
+		StringWriter writer = new StringWriter();
+		PemWriter pemWriter = new PemWriter(writer);
+		try {
+			pemWriter.writeObject(new PemObject("RSA PUBLIC KEY", publicKey.getEncoded()));
+			pemWriter.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return Mono.error(e);
+		}
+		return this.aesEncryptionService.encrypt(writer.toString().getBytes(StandardCharsets.UTF_8),
+				session.getId().getBytes(StandardCharsets.UTF_8), true);
 	}
 }

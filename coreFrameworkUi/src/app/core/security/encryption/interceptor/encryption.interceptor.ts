@@ -29,7 +29,7 @@ export class EncryptionInterceptor implements HttpInterceptor {
   }
   private loginFilter(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return this.encrptionService.encryptWithRsaPublicKeyString(JSON.stringify(request.body), this.sessionStorageService.getEncryptionKey()).pipe(mergeMap(encryptedContents => {
-      return next.handle(request.clone({ body: encryptedContents }));
+      return next.handle(request.clone({ body: encryptedContents, responseType: 'text' }));
     }))
   }
 

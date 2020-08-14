@@ -89,7 +89,7 @@ public class WebSessionManager implements org.springframework.web.server.session
 
 	private boolean ispublicFile(ServerWebExchange exchange) {
 		String requestPath = exchange.getRequest().getPath().toString();
-		return (requestPath.endsWith(".js") || requestPath.endsWith(".js.map") || requestPath.endsWith(".ico")
-				|| requestPath.equalsIgnoreCase("/"));
+		return (requestPath.endsWith(".css") || requestPath.endsWith(".js") || requestPath.endsWith(".js.map")
+				|| requestPath.endsWith(".ico") || requestPath.equalsIgnoreCase("/"));
 	}
 }
